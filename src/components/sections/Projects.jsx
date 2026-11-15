@@ -7,7 +7,6 @@ import { scrollToTarget, lockScroll } from '../../lib/scroll'
 // Open a room in the interactive 3D showcase (Showcase.jsx listens for this event).
 export const openInShowcase = (room) => {
   window.dispatchEvent(new CustomEvent('showcase:select', { detail: room }))
-  scrollToTarget('#showcase')
 }
 
 export function Projects() {

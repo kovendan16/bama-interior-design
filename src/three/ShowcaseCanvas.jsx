@@ -1,36 +1,85 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
+import { Environment } from '@react-three/drei'
 import { EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
-import gsap from 'gsap'
 import { ROOM_COMPONENTS } from './rooms/Rooms'
 import { TransformRoom } from './rooms/TransformRoom'
 import { PRACTICALS } from './world'
+import { store } from '../lib/store'
+import { SC_ROOMS, SC_SPACING, U_TOTAL, roomCoord, shotAt } from './showcasePath'
 
-const OVERVIEW = { pos: new THREE.Vector3(6.2, 6.2, 9.6), target: new THREE.Vector3(0.3, 0.9, -1.9) }
-const INSIDE = { pos: new THREE.Vector3(0.2, 1.6, 2.0), target: new THREE.Vector3(0.2, 1.59, 1.9) }
+// smoothed scroll position shared by the rig, rooms and lights
+const live = { u: 0 }
 
-function StudioLights({ room }) {
+/** camera follows the scroll path, with a little pointer parallax */
+function Rig() {
+  const { camera, size } = useThree()
+  const pos = useMemo(() => new THREE.Vector3(), [])
+  const tgt = useMemo(() => new THREE.Vector3(), [])
+  const off = useMemo(() => new THREE.Vector3(), [])
+  const ptr = useRef({ x: 0, y: 0 })
+  const first = useRef(true)
+
+  useEffect(() => {
+    const aspect = size.width / size.height
+    camera.fov = aspect < 1 ? 52 : aspect < 1.4 ? 46 : 40
+    camera.updateProjectionMatrix()
+  }, [camera, size])
+
+  useFrame((state, dt) => {
+    const goal = (store.progress.showcase || 0) * U_TOTAL
+    live.u = first.current ? goal : THREE.MathUtils.damp(live.u, goal, 3.2, dt)
+    first.current = false
+    shotAt(live.u, pos, tgt)
+
+    // narrow screens: step back so the room still fits
+    const aspect = size.width / size.height
+    if (aspect < 1.5) {
+      off.copy(pos).sub(tgt).multiplyScalar(1 + (1.5 - aspect) * 0.55)
+      pos.copy(tgt).add(off)
+    }
+
+    ptr.current.x = THREE.MathUtils.damp(ptr.current.x, store.pointer.x, 2.5, dt)
+    ptr.current.y = THREE.MathUtils.damp(ptr.current.y, store.pointer.y, 2.5, dt)
+    const t = state.clock.elapsedTime
+    pos.x += ptr.current.x * 0.45 + Math.sin(t * 0.25) * 0.08
+    pos.y += ptr.current.y * 0.25 + Math.sin(t * 0.32) * 0.05
+    camera.position.copy(pos)
+    camera.lookAt(tgt)
+  })
+  return null
+}
+
+/** sun + practicals move to whichever room the camera is in */
+function Lights() {
+  const sun = useRef()
   const p1 = useRef()
   const p2 = useRef()
-  useEffect(() => {
-    const pr = PRACTICALS[room] || PRACTICALS.living
-    p1.current.position.set(pr[0][0], pr[0][1], pr[0][2])
-    p2.current.position.set(pr[1][0], pr[1][1], pr[1][2])
-    p1.current.color.set(pr[0][4])
-    p2.current.color.set(pr[1][4])
-    p1.current.intensity = pr[0][3]
-    p2.current.intensity = pr[1][3]
-  }, [room])
+  const last = useRef(-1)
+  useFrame(() => {
+    const k = Math.round(roomCoord(live.u))
+    if (k === last.current || !sun.current) return
+    last.current = k
+    const x = k * SC_SPACING
+    sun.current.position.set(x - 5, 10, -12)
+    sun.current.target.position.set(x, 0, 0)
+    sun.current.target.updateMatrixWorld()
+    const pr = PRACTICALS[SC_ROOMS[k]] || PRACTICALS.living
+    ;[p1, p2].forEach((p, j) => {
+      p.current.position.set(pr[j][0] + x, pr[j][1], pr[j][2])
+      p.current.color.set(pr[j][4])
+      p.current.intensity = pr[j][3]
+    })
+  })
   return (
     <>
       <hemisphereLight args={['#fff4e6', '#3a2c20', 0.5]} />
       <directionalLight
+        ref={sun}
         color="#ffe6c4"
         intensity={3}
-        position={[-5, 10, -12]}
         castShadow
         shadow-mapSize={[2048, 2048]}
         shadow-bias={-0.0004}
@@ -41,7 +90,7 @@ function StudioLights({ room }) {
         shadow-camera-bottom={-9}
         shadow-camera-far={40}
       />
-      <directionalLight color="#dfe8ff" intensity={0.6} position={[6, 8, 10]} />
+      <directionalLight color="#dfe8ff" intensity={0.6} position={[30, 8, 14]} />
       <pointLight ref={p1} distance={10} decay={2} />
       <pointLight ref={p2} distance={9} decay={2} />
       <Environment files="/hdri/art_studio.hdr" environmentIntensity={0.65} />
@@ -49,139 +98,53 @@ function StudioLights({ room }) {
   )
 }
 
-function RoomStage({ room, inside }) {
-  const g = useRef()
-  const Comp = room === 'living' ? TransformRoom : ROOM_COMPONENTS[room]
-  useEffect(() => {
-    if (!g.current) return
-    gsap.fromTo(g.current.scale, { y: 0.001 }, { y: 1, duration: 1.3, ease: 'expo.out' })
-    gsap.fromTo(g.current.position, { y: -0.6 }, { y: 0, duration: 1.3, ease: 'expo.out' })
-  }, [room])
-  return (
-    <group ref={g}>
-      <Comp key={room} shell={{ ceiling: inside, front: inside, left: { door: false }, right: { door: false } }} />
-    </group>
-  )
-}
+const SHELL = { ceiling: false, front: false, left: { door: false }, right: { door: false } }
 
-function Controls({ mode, zoomRef, onInteract }) {
-  const ctrl = useRef()
-  const { camera } = useThree()
-  const idle = useRef(0)
-  const anim = useRef(false)
-
-  // fly between "overview" and "step inside" (360°) modes
-  useEffect(() => {
-    const c = ctrl.current
-    if (!c) return
-    const shot = mode === 'inside' ? INSIDE : OVERVIEW
-    anim.current = true
-    c.enabled = false
-    const tl = gsap.timeline({
-      onComplete: () => {
-        anim.current = false
-        c.enabled = true
-        if (mode === 'inside') {
-          c.minDistance = 0.05
-          c.maxDistance = 0.2
-          c.minPolarAngle = 0.9
-          c.maxPolarAngle = 2.2
-          c.minAzimuthAngle = -Infinity
-          c.maxAzimuthAngle = Infinity
-          c.rotateSpeed = -0.35
-        } else {
-          c.minDistance = 7
-          c.maxDistance = 22
-          c.minPolarAngle = 0.35
-          c.maxPolarAngle = 1.42
-          c.minAzimuthAngle = -1.05
-          c.maxAzimuthAngle = 1.05
-          c.rotateSpeed = 0.6
-        }
-        c.update()
-      },
+/** all rooms in a row; each one builds up out of the floor as the camera arrives */
+function House() {
+  const refs = useRef([])
+  useFrame(() => {
+    const c = roomCoord(live.u)
+    refs.current.forEach((g, i) => {
+      if (!g) return
+      const v = THREE.MathUtils.clamp(1 - Math.abs(c - i) * 1.15, 0, 1)
+      const e = 1 - Math.pow(1 - v, 3)
+      g.visible = v > 0.001
+      g.scale.y = Math.max(0.002, e)
+      g.position.y = (e - 1) * 0.4
     })
-    c.minDistance = 0
-    c.maxDistance = Infinity
-    c.minAzimuthAngle = -Infinity
-    c.maxAzimuthAngle = Infinity
-    c.minPolarAngle = 0
-    c.maxPolarAngle = Math.PI
-    tl.to(camera.position, { x: shot.pos.x, y: shot.pos.y, z: shot.pos.z, duration: 1.8, ease: 'power3.inOut' }, 0)
-    tl.to(c.target, { x: shot.target.x, y: shot.target.y, z: shot.target.z, duration: 1.8, ease: 'power3.inOut', onUpdate: () => c.update() }, 0)
-    tl.to(camera, { fov: mode === 'inside' ? 68 : 40, duration: 1.8, ease: 'power3.inOut', onUpdate: () => camera.updateProjectionMatrix() }, 0)
-    zoomRef.current = 0
-    return () => tl.kill()
-  }, [mode, camera, zoomRef])
-
-  const sph = useMemo(() => new THREE.Spherical(), [])
-  const off = useMemo(() => new THREE.Vector3(), [])
-  useFrame(({ clock }, dt) => {
-    const c = ctrl.current
-    if (!c || anim.current) return
-    // zoom buttons: dolly (overview) or narrow the lens (inside)
-    if (zoomRef.current !== 0) {
-      const z = zoomRef.current
-      zoomRef.current = 0
-      if (mode === 'inside') {
-        gsap.to(camera, { fov: THREE.MathUtils.clamp(camera.fov - z * 10, 38, 80), duration: 0.6, onUpdate: () => camera.updateProjectionMatrix() })
-      } else {
-        off.copy(camera.position).sub(c.target)
-        const d = THREE.MathUtils.clamp(off.length() * (z > 0 ? 0.8 : 1.25), c.minDistance, c.maxDistance)
-        off.setLength(d).add(c.target)
-        gsap.to(camera.position, { x: off.x, y: off.y, z: off.z, duration: 0.7, ease: 'power2.out', onUpdate: () => c.update() })
-      }
-      idle.current = 0
-    }
-    // gentle idle drift so the room is always alive
-    idle.current += dt
-    if (idle.current > 4) {
-      off.copy(camera.position).sub(c.target)
-      sph.setFromVector3(off)
-      if (mode === 'inside') sph.theta += dt * 0.06
-      else sph.theta += (Math.sin(clock.elapsedTime * 0.15) * 0.6 - sph.theta) * dt * 0.3
-      off.setFromSpherical(sph).add(c.target)
-      camera.position.copy(off)
-      c.update()
-    }
   })
-
-  return (
-    <OrbitControls
-      ref={ctrl}
-      makeDefault
-      enableZoom={false}
-      enablePan={false}
-      enableDamping
-      dampingFactor={0.08}
-      target={OVERVIEW.target.toArray()}
-      onStart={() => {
-        idle.current = 0
-        onInteract?.()
-      }}
-      onChange={() => {}}
-    />
-  )
+  return SC_ROOMS.map((id, i) => {
+    const Comp = id === 'living' ? TransformRoom : ROOM_COMPONENTS[id]
+    return (
+      <group key={id} ref={(el) => (refs.current[i] = el)} position={[i * SC_SPACING, 0, 0]}>
+        <Comp shell={SHELL} />
+      </group>
+    )
+  })
 }
 
-export default function PortfolioCanvas({ room, mode, zoomRef, isMobile, onInteract }) {
+export default function ShowcaseCanvas({ isMobile }) {
   return (
     <Canvas
       shadows="percentage"
       dpr={[1, isMobile ? 1.4 : 1.75]}
-      camera={{ fov: 40, near: 0.05, far: 80, position: OVERVIEW.pos.toArray() }}
+      camera={{ fov: 40, near: 0.05, far: 90, position: [6, 6, 13] }}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       onCreated={({ gl, scene }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping
         gl.toneMappingExposure = 1.05
         scene.background = new THREE.Color('#f3ece9')
-        scene.fog = new THREE.Fog('#f3ece9', 28, 55)
+        scene.fog = new THREE.Fog('#f3ece9', 30, 62)
       }}
     >
-      <StudioLights room={room} />
-      <RoomStage room={room} inside={mode === 'inside'} />
-      <ContactShadows position={[0, -0.25, 0]} scale={16} opacity={0.5} blur={2.5} far={1} frames={1} />
-      <Controls mode={mode} zoomRef={zoomRef} onInteract={onInteract} />
+      <Rig />
+      <Lights />
+      <House />
+      <mesh rotation-x={-Math.PI / 2} position={[((SC_ROOMS.length - 1) * SC_SPACING) / 2, -0.245, 0]} receiveShadow>
+        <planeGeometry args={[SC_ROOMS.length * SC_SPACING + 40, 60]} />
+        <shadowMaterial transparent opacity={0.12} />
+      </mesh>
       {!isMobile && (
         <EffectComposer multisampling={0} disableNormalPass>
           <N8AO halfRes aoRadius={0.55} intensity={2.2} distanceFalloff={0.7} quality="medium" />

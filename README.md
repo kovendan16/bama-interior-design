@@ -20,7 +20,7 @@ npm run preview   # serve the production build
 | About | `sections/About.jsx` | |
 | Services (8 cards) | `sections/Services.jsx` | |
 | Projects + lightbox | `sections/Projects.jsx` | "View in 3D" opens the room in the showcase |
-| Interactive 3D showcase | `sections/Showcase.jsx`, `three/ShowcaseCanvas.jsx` | Rotate, zoom, step inside |
+| 3D house tour | `sections/Showcase.jsx`, `three/ShowcaseCanvas.jsx`, `three/showcasePath.js` | Pinned; scrolling flies the camera Living → Bedroom → Kitchen → Bathroom → Office |
 | Design process (7 steps) | `sections/Process.jsx` | |
 | Moodboard → room | `sections/Story.jsx`, `three/clay/ClayCanvas.jsx` | |
 | Why choose Bama | `sections/WhyChoose.jsx` | |

@@ -31,7 +31,7 @@ export function Shell({
       <Plane s={[w, d]} r={[-Math.PI / 2, 0, 0]} p={[0, 0, 0]} m={floor} />
       <B s={[w + WALL_T * 2, 0.24, d]} p={[0, -0.121, 0]} m={slab} shadow={false} />
 
-      <BackWall w={w} d={d} h={h} wall={wall} windows={windows} sky={sky} frame={frame} />
+      <BackWall w={w} d={d} h={h} clip={!ceiling} wall={wall} windows={windows} sky={sky} frame={frame} />
 
       {left && <SideWall x={-w / 2 - WALL_T / 2} d={d} h={left.h ?? h} m={left.m || sw} door={left.door} skirting={skirting} side={1} />}
       {right && <SideWall x={w / 2 + WALL_T / 2} d={d} h={right.h ?? h} m={right.m || sw} door={right.door} skirting={skirting} side={-1} />}
@@ -45,7 +45,7 @@ export function Shell({
   )
 }
 
-function BackWall({ w, d, h, wall, windows, sky, frame }) {
+function BackWall({ w, d, h, clip, wall, windows, sky, frame }) {
   const z = -d / 2 - WALL_T / 2
   const pieces = []
   const sorted = [...windows].sort((a, b) => a.x - b.x)
@@ -65,13 +65,13 @@ function BackWall({ w, d, h, wall, windows, sky, frame }) {
     <group>
       {pieces}
       {sorted.map((win, i) => (
-        <Window key={i} win={win} z={z} d={d} sky={sky} frame={frame} />
+        <Window key={i} win={win} z={z} d={d} h={clip ? h : Infinity} sky={sky} frame={frame} />
       ))}
     </group>
   )
 }
 
-function Window({ win, z, sky, frame }) {
+function Window({ win, z, h, sky, frame }) {
   const wh = win.top - win.sill
   const cy = win.sill + wh / 2
   const ft = 0.05
@@ -92,7 +92,12 @@ function Window({ win, z, sky, frame }) {
       {/* glass */}
       <B s={[win.w, wh, 0.01]} p={[win.x, cy, z + 0.03]} m="glass" shadow={false} castShadow={false} />
       {/* painted landscape behind the opening — sized so neighbouring rooms never overlap */}
-      <Plane s={[win.w + 2.4, wh + 2.4]} p={[win.x, cy + 0.3, z - 1.0]} m={sky} />
+      {/* kept below the wall top so it never shows above a ceiling-less cut-away */}
+      {(() => {
+        const top = Math.min(cy + 0.3 + (wh + 2.4) / 2, h - 0.02)
+        const bot = h === Infinity ? cy + 0.3 - (wh + 2.4) / 2 : Math.max(cy + 0.3 - (wh + 2.4) / 2, 0)
+        return <Plane s={[win.w + 2.4, top - bot]} p={[win.x, (top + bot) / 2, z - 1.0]} m={sky} />
+      })()}
     </group>
   )
 }
