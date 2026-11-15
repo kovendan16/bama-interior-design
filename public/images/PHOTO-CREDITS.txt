@@ -1,0 +1,50 @@
+All photos in this folder are free photos from Unsplash (https://unsplash.com),
+used under the Unsplash License: free for commercial and personal use, no
+permission or attribution required (https://unsplash.com/license).
+Replace them with your own project photos whenever you have them; keep the
+same file names, or update the lists in src/lib/content.js.
+
+Original photo IDs (view at https://unsplash.com/photos/<id>):
+scenes/living.jpg          1541194577687-8c63bf9e7ee3
+scenes/bedroom.jpg         1617098900591-3f90928e8c54
+scenes/kitchen.jpg         1759147960461-b74a7e9a75d4
+scenes/s1-furniture.jpg    1586023492125-27b2c045efd7
+scenes/s2-lighting.jpg     1791209135222-f0db6926388b
+scenes/s3-ceilings.jpg     1766445318570-1dc4bf3f5d79
+scenes/s4-walls.jpg        1730991539023-2bcf7403f1bd
+scenes/about.jpg           1780362507424-a624df756101
+scenes/p1-planning.jpg     1603901622056-0a5bee231395
+scenes/p2-design.jpg       1770200574989-a4cca2c70c00
+scenes/p3-materials.jpg    1664638413302-d1ca29ac885b
+scenes/p4-execution.jpg    1768321916027-d0f69289227f
+scenes/contact.jpg         1777499669860-9cfb11897126
+gallery/living-1.jpg       1598928506311-c55ded91a20c
+gallery/bedroom-1.jpg      1616594039964-ae9021a400a0
+gallery/kitchen-1.jpg      1671197244266-73129c97c096
+gallery/living-2.jpg       1631679706909-1844bbd07221
+gallery/bathroom-1.jpg     1765745518673-b562b7304a53
+gallery/office-1.jpg       1766330977451-de1b64b5e641
+gallery/bedroom-2.jpg      1785529907889-2d75e49414b2
+gallery/kitchen-2.jpg      1663811397261-916af74a9363
+gallery/dining-1.jpg       1778731525602-dc44818f0e5e
+gallery/bathroom-2.jpg     1781344334947-60c704bafd51
+
+--- Transformation room (live 3D) ---
+3D furniture models (public/models), surface textures (public/textures/*)
+and the lighting map (public/hdri/art_studio.hdr) are from Poly Haven
+(https://polyhaven.com), released as CC0: free for any use, no credit needed.
+Models: sofa_02, modern_arm_chair_01, mid_century_lounge_chair, Ottoman_01,
+coffee_table_round_01, modern_wooden_cabinet, side_table_tall_01, Chandelier_01,
+potted_plant_01, potted_plant_04, ceramic_vase_01, ceramic_vase_03, throw_pillows_01.
+Textures: herringbone_parquet, plastered_wall_02, concrete_floor_worn_001,
+rough_linen, fabric_pattern_07.
+
+Photos used inside the 3D room (Unsplash License):
+textures/photos/window-view.jpg   1686987747972-a50b328b0b14
+textures/photos/art-neutral.jpg   1681235014294-588fea095706
+textures/photos/art-blush.jpg     1533157950006-c38844053d55
+
+Site section photos (Unsplash License):
+site/commercial.jpg     1775866914943-ba1415a35afc
+site/house.jpg          1678575326996-a1bf09b86158
+site/consultation.jpg   1616587656977-ac36a5a430bc
