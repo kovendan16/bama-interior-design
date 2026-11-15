@@ -1,20 +1,22 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { useGLTF, useTexture } from '@react-three/drei'
 import { MaterialMode, getMat } from '../materials'
 import { LivingRoom } from '../rooms/Rooms'
-import { DiningChair, Stool, Bench } from '../furniture/rooms-furniture'
-import { Vase, Bowl, Books, Armchair, SideTable, Ottoman } from '../furniture/living'
-import { PendantGlobe, FloorLamp } from '../furniture/lighting'
-import { Plant } from '../furniture/decor'
-import { clay } from './state'
-import { store, damp, range, easeInOutCubic } from '../../lib/store'
+import { Shell } from '../rooms/Shell'
+import { B, RB, Cyl, Sph, Plane } from '../furniture/primitives'
+import { Sofa, Armchair, CoffeeTable, Ottoman, Rug } from '../furniture/living'
+import { Curtain } from '../furniture/decor'
+import { clay, MOODBOARD_STEPS, MOODBOARD_LOGO, CURTAIN_OPEN } from './state'
+import { store, damp, range, easeInOutCubic, easeOutCubic } from '../../lib/store'
 
 /*
- * CLAY SCENES — white architectural-model look (like a physical maquette).
- *   hero  : floating cut-away room surrounded by drifting fragments
- *   story : room → explodes into pieces → swarm of "idea" words → rebuilt home
- *   cta   : furniture and fragments tumbling in space behind "Let's create together."
+ * CLAY & STORY SCENES
+ *   hero      : white architectural model of a room, drifting fragments
+ *   moodboard : swatches fly from a designer's board into a model room and
+ *               become its floor, walls, sofa, table, curtains and lamp
+ *   curtain   : blush linen curtains draw open on a warmly lit corner
  */
 
 const PINK = () => getMat('clayPink')
@@ -25,13 +27,13 @@ const rnd = (seed) => {
 }
 
 /* ------------------------------------------------------------- lighting */
-function ClayLights({ dark = false }) {
+function ClayLights() {
   return (
     <>
-      <hemisphereLight args={['#ffffff', dark ? '#3a2c33' : '#e9dde1', dark ? 1.1 : 1.35]} />
+      <hemisphereLight args={['#ffffff', '#e9dde1', 1.35]} />
       <directionalLight
         position={[8, 14, 9]}
-        intensity={dark ? 2.2 : 2.6}
+        intensity={2.6}
         color="#fff6f2"
         castShadow
         shadow-mapSize={[2048, 2048]}
@@ -41,28 +43,24 @@ function ClayLights({ dark = false }) {
         shadow-camera-bottom={-10}
         shadow-bias={-0.0004}
         shadow-normalBias={0.03}
-        shadow-radius={6}
       />
       <directionalLight position={[-9, 5, -4]} intensity={0.6} color="#ffe3ea" />
     </>
   )
 }
 
-/* ------------------------------------------------------------- fragments
- * Thin architectural shards (panels, slats, frames) drifting around. */
+/* ------------------------------------------------------------- fragments (hero) */
 function Fragments({ count = 120, radius = [4, 10], seed = 7, spread, pinkRatio = 0.18, speed = 1 }) {
   const white = useRef()
   const pink = useRef()
   const items = useMemo(() => {
     const r = rnd(seed)
-    return Array.from({ length: count }, (_, i) => {
+    return Array.from({ length: count }, () => {
       const dir = new THREE.Vector3(r() * 2 - 1, (r() * 2 - 1) * 0.6, r() * 2 - 1).normalize()
       const dist = radius[0] + r() * (radius[1] - radius[0])
       const kind = r()
       const size =
-        kind < 0.45 ? [0.5 + r() * 0.9, 0.025, 0.3 + r() * 0.6] // panel
-          : kind < 0.75 ? [0.04, 0.6 + r() * 1.2, 0.04] // slat
-            : [0.35 + r() * 0.5, 0.35 + r() * 0.5, 0.025] // tile / frame
+        kind < 0.45 ? [0.5 + r() * 0.9, 0.025, 0.3 + r() * 0.6] : kind < 0.75 ? [0.04, 0.6 + r() * 1.2, 0.04] : [0.35 + r() * 0.5, 0.35 + r() * 0.5, 0.025]
       return {
         pink: r() < pinkRatio,
         base: dir.multiplyScalar(dist),
@@ -74,27 +72,22 @@ function Fragments({ count = 120, radius = [4, 10], seed = 7, spread, pinkRatio 
     })
   }, [count, seed]) // eslint-disable-line react-hooks/exhaustive-deps
   const counts = useMemo(() => ({ pink: items.filter((i) => i.pink).length, white: items.filter((i) => !i.pink).length }), [items])
-  const m = useMemo(() => new THREE.Matrix4(), [])
-  const q = useMemo(() => new THREE.Quaternion(), [])
-  const e = useMemo(() => new THREE.Euler(), [])
-  const p = useMemo(() => new THREE.Vector3(), [])
-  const s = useMemo(() => new THREE.Vector3(), [])
+  const tmp = useMemo(() => ({ m: new THREE.Matrix4(), q: new THREE.Quaternion(), e: new THREE.Euler(), p: new THREE.Vector3(), s: new THREE.Vector3() }), [])
   const geo = useMemo(() => new THREE.BoxGeometry(1, 1, 1), [])
-
   useFrame(({ clock }) => {
     const t = clock.elapsedTime * speed
     const k = spread ? spread() : 0
     let wi = 0
     let pi = 0
     for (const it of items) {
-      p.copy(it.base).multiplyScalar(1 + k * 0.9)
-      p.y += Math.sin(t * 0.5 + it.bob) * 0.25 + k * 2
-      e.set(it.rot.x + it.spin.x * t, it.rot.y + it.spin.y * t, it.rot.z + it.spin.z * t)
-      q.setFromEuler(e)
-      s.set(...it.size)
-      m.compose(p, q, s)
-      if (it.pink) pink.current?.setMatrixAt(pi++, m)
-      else white.current?.setMatrixAt(wi++, m)
+      tmp.p.copy(it.base).multiplyScalar(1 + k * 0.9)
+      tmp.p.y += Math.sin(t * 0.5 + it.bob) * 0.25 + k * 2
+      tmp.e.set(it.rot.x + it.spin.x * t, it.rot.y + it.spin.y * t, it.rot.z + it.spin.z * t)
+      tmp.q.setFromEuler(tmp.e)
+      tmp.s.set(...it.size)
+      tmp.m.compose(tmp.p, tmp.q, tmp.s)
+      if (it.pink) pink.current?.setMatrixAt(pi++, tmp.m)
+      else white.current?.setMatrixAt(wi++, tmp.m)
     }
     if (white.current) white.current.instanceMatrix.needsUpdate = true
     if (pink.current) pink.current.instanceMatrix.needsUpdate = true
@@ -107,14 +100,13 @@ function Fragments({ count = 120, radius = [4, 10], seed = 7, spread, pinkRatio 
   )
 }
 
-/* ------------------------------------------------------------- model room */
+/* ------------------------------------------------------------- HERO */
 function ModelRoom(props) {
   return (
     <group {...props}>
       <MaterialMode.Provider value="clayWhite">
         <LivingRoom shell={{ ceiling: false, left: { door: false } }} curtainsAnimated={false} />
       </MaterialMode.Provider>
-      {/* a few blush pieces, like accent furniture in an architect's model */}
       <MaterialMode.Provider value="clayPink">
         <Armchair position={[3.3, 0, 1.4]} rotation={[0, -2.2, 0]} />
         <Ottoman position={[-3.4, 0, 1.8]} />
@@ -123,7 +115,6 @@ function ModelRoom(props) {
   )
 }
 
-/* ------------------------------------------------------------- HERO */
 function HeroScene() {
   const g = useRef()
   const { size } = useThree()
@@ -148,226 +139,367 @@ function HeroScene() {
   )
 }
 
-/* ------------------------------------------------------------- STORY
- * explode(): every mesh of the room flies out along its direction from the
- * room centre (and tumbles), then flies back — a generic, data-free explosion. */
-function useExploder(groupRef) {
-  const parts = useRef(null)
-  const tmp = useMemo(() => ({ c: new THREE.Vector3(), w: new THREE.Vector3(), box: new THREE.Box3(), inv: new THREE.Matrix4() }), [])
-  const init = () => {
-    const root = groupRef.current
-    if (!root) return null
-    root.updateMatrixWorld(true)
-    tmp.box.setFromObject(root).getCenter(tmp.c)
-    const r = rnd(5)
-    const list = []
-    root.traverse((o) => {
-      if (!o.isMesh || !o.parent) return
-      o.getWorldPosition(tmp.w)
-      const dirW = tmp.w.clone().sub(tmp.c)
-      dirW.y = Math.abs(dirW.y) + 0.6
-      // big pieces (walls, floor) travel less than small ones, so they never fill the screen
-      const big = new THREE.Box3().setFromObject(o).getSize(new THREE.Vector3()).length()
-      dirW.normalize().multiplyScalar((2.5 + r() * 5) * Math.min(1, Math.max(0.18, 1.6 / Math.max(big, 0.01))))
-      // world direction → parent-local direction
-      tmp.inv.copy(o.parent.matrixWorld).invert()
-      const dirL = dirW.clone().transformDirection(tmp.inv).multiplyScalar(dirW.length() / o.parent.getWorldScale(new THREE.Vector3()).x)
-      list.push({ o, pos: o.position.clone(), rot: o.rotation.clone(), off: dirL, spin: new THREE.Vector3(r() * 4 - 2, r() * 4 - 2, r() * 4 - 2) })
-    })
-    return list
-  }
-  return (amount) => {
-    if (!parts.current) parts.current = init()
-    if (!parts.current) return
-    const a = amount
-    for (const it of parts.current) {
-      it.o.position.copy(it.pos).addScaledVector(it.off, a)
-      it.o.rotation.set(it.rot.x + it.spin.x * a, it.rot.y + it.spin.y * a, it.rot.z + it.spin.z * a)
-    }
-  }
-}
-
-function wordTexture() {
-  const c = document.createElement('canvas')
-  c.width = 256
-  c.height = 96
-  const x = c.getContext('2d')
-  x.fillStyle = '#ffffff'
-  x.font = '600 72px "Inter Tight", "Helvetica Neue", Arial, sans-serif'
-  x.textBaseline = 'middle'
-  x.fillText('idea', 18, 50)
-  const t = new THREE.CanvasTexture(c)
+/* ================================================================ MOODBOARD
+ * Every target material is created once with a map slot (white 1×1 texture), so
+ * swapping in the real texture when a swatch lands never recompiles a shader. */
+const WHITE_TEX = (() => {
+  const t = new THREE.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1)
+  t.needsUpdate = true
   t.colorSpace = THREE.SRGBColorSpace
   return t
+})()
+
+function useMoodboardMaterials() {
+  const [parquet, plaster, linenN] = useTexture(['/textures/herringbone_parquet/diff.jpg', '/textures/plastered_wall_02/diff.jpg', '/textures/rough_linen/nor.jpg'])
+  return useMemo(() => {
+    const rep = (src, x, y) => {
+      const t = src.clone()
+      t.wrapS = t.wrapT = THREE.RepeatWrapping
+      t.repeat.set(x, y)
+      t.colorSpace = src === linenN ? THREE.NoColorSpace : THREE.SRGBColorSpace
+      t.needsUpdate = true
+      return t
+    }
+    const marbleMap = getMat('marbleWhite').map
+    const clayColor = new THREE.Color('#f3efee')
+    const m = {
+      clayColor,
+      tex: { floor: rep(parquet, 4, 3.4), walls: rep(plaster, 2.5, 1.2), table: marbleMap },
+      // targets inside the model room
+      floor: new THREE.MeshStandardMaterial({ map: WHITE_TEX, color: clayColor.clone(), roughness: 0.6 }),
+      walls: new THREE.MeshStandardMaterial({ map: WHITE_TEX, color: clayColor.clone(), roughness: 0.92 }),
+      sofa: new THREE.MeshPhysicalMaterial({ color: clayColor.clone(), roughness: 0.85, sheen: 1, sheenRoughness: 0.45, sheenColor: new THREE.Color('#ffd9e2') }),
+      table: new THREE.MeshPhysicalMaterial({ map: WHITE_TEX, color: clayColor.clone(), roughness: 0.25, clearcoat: 0.8, clearcoatRoughness: 0.1 }),
+      curtain: new THREE.MeshPhysicalMaterial({ color: '#efdcd8', normalMap: rep(linenN, 2, 3), roughness: 0.95, sheen: 1, sheenColor: new THREE.Color('#ffffff'), side: THREE.DoubleSide }),
+      lamp: new THREE.MeshStandardMaterial({ color: clayColor.clone(), metalness: 0, roughness: 0.6 }),
+      bulb: new THREE.MeshStandardMaterial({ color: '#fff4e4', emissive: new THREE.Color('#ffcf8a'), emissiveIntensity: 0, toneMapped: false }),
+      sky: new THREE.MeshBasicMaterial({ color: '#f7ecee' }),
+      board: new THREE.MeshStandardMaterial({ color: '#d9c4c0', roughness: 1 }),
+      frame: new THREE.MeshStandardMaterial({ color: '#d8c6c3', roughness: 0.8 }),
+      pencil: new THREE.MeshBasicMaterial({ color: '#8a7d80' }),
+      // shadow-only ground: the blush page colour shows through, no horizon line
+      ground: new THREE.ShadowMaterial({ opacity: 0.16 }),
+    }
+    // swatch cards show the finished material
+    m.swatch = {
+      floor: new THREE.MeshStandardMaterial({ map: rep(parquet, 0.5, 0.5), roughness: 0.55 }),
+      walls: new THREE.MeshStandardMaterial({ map: rep(plaster, 0.6, 0.6), color: '#f4e6e2', roughness: 0.95 }),
+      sofa: new THREE.MeshPhysicalMaterial({ color: '#d98ca0', roughness: 0.8, sheen: 1, sheenColor: new THREE.Color('#ffd9e2') }),
+      table: new THREE.MeshPhysicalMaterial({ map: marbleMap, roughness: 0.2, clearcoat: 0.9 }),
+      curtain: new THREE.MeshPhysicalMaterial({ color: '#efdcd8', normalMap: rep(linenN, 0.6, 0.6), roughness: 0.95, sheen: 1 }),
+      lamp: new THREE.MeshStandardMaterial({ color: '#c9a45c', metalness: 0.35, roughness: 0.35, emissive: new THREE.Color('#3a2a10') }),
+    }
+    return m
+  }, [parquet, plaster, linenN])
 }
 
-function WordSwarm({ count = 260, swarm, gather }) {
-  const white = useRef()
-  const pink = useRef()
-  const { camera } = useThree()
-  const tex = useMemo(wordTexture, [])
-  const geo = useMemo(() => new THREE.PlaneGeometry(1, 0.375), [])
-  const mats = useMemo(
-    () => [
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, color: '#ffffff', opacity: 0.9 }),
-      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, color: '#f3a9bb' }),
-    ],
-    [tex],
+const SLOTS = [
+  [-1.32, 0.62], [0, 0.62], [1.32, 0.62],
+  [-1.32, -0.68], [0, -0.68], [1.32, -0.68],
+]
+// where each swatch lands, in the model room's local space (metres)
+const TARGETS = {
+  floor: { p: [0, 0.05, 0.5], flat: true },
+  walls: { p: [-1.5, 2.2, -4.9] },
+  sofa: { p: [0, 0.7, -3.2] },
+  table: { p: [0, 0.45, -1.2], flat: true },
+  curtain: { p: [2.7, 2.6, -4.6] },
+  lamp: { p: [-3.8, 1.5, -3.3] },
+}
+const PRESS = 0.86 // fraction of a step window when the swatch lands
+
+function Swatch({ i, step, mat, board, room }) {
+  const g = useRef()
+  const d = useMemo(
+    () => ({ s: new THREE.Vector3(), e: new THREE.Vector3(), c: new THREE.Vector3(), qs: new THREE.Quaternion(), qe: new THREE.Quaternion(), tmp: new THREE.Vector3(), ready: false }),
+    [],
   )
-  const items = useMemo(() => {
-    const r = rnd(21)
-    return Array.from({ length: count }, () => {
-      const dir = new THREE.Vector3(r() * 2 - 1, (r() * 2 - 1) * 0.55, r() * 2 - 1).normalize()
-      return {
-        pink: r() < 0.16,
-        from: dir.clone().multiplyScalar(18 + r() * 10),
-        to: dir.clone().multiplyScalar(2.2 + r() * 4.5),
-        s: 0.45 + r() * 0.9,
-        orbit: 0.15 + r() * 0.35,
-        delay: r() * 0.35,
-      }
-    })
-  }, [count])
-  const counts = useMemo(() => ({ pink: items.filter((i) => i.pink).length, white: items.filter((i) => !i.pink).length }), [items])
-  const m = useMemo(() => new THREE.Matrix4(), [])
-  const p = useMemo(() => new THREE.Vector3(), [])
-  const sc = useMemo(() => new THREE.Vector3(), [])
-  const axis = useMemo(() => new THREE.Vector3(0, 1, 0), [])
-  useFrame(({ clock }) => {
-    const sw = swarm()
-    const ga = gather()
-    const vis = sw > 0.001 && ga < 0.999
-    if (white.current) white.current.visible = vis
-    if (pink.current) pink.current.visible = vis
-    if (!vis) return
-    const t = clock.elapsedTime
-    let wi = 0
-    let pi = 0
-    for (const it of items) {
-      const a = easeInOutCubic(Math.min(1, Math.max(0, (sw - it.delay) / (1 - it.delay))))
-      p.lerpVectors(it.from, it.to, a).applyAxisAngle(axis, t * it.orbit * 0.4)
-      p.multiplyScalar(1 - ga) // gather into the centre
-      const k = it.s * a * (1 - ga * ga)
-      sc.set(k, k, k)
-      m.compose(p, camera.quaternion, sc)
-      if (it.pink) pink.current.setMatrixAt(pi++, m)
-      else white.current.setMatrixAt(wi++, m)
+  useFrame(({ camera }) => {
+    const el = g.current
+    if (!el || !board.current || !room.current) return
+    if (!d.ready) {
+      board.current.updateMatrixWorld(true)
+      room.current.updateMatrixWorld(true)
+      d.s.set(SLOTS[i][0], SLOTS[i][1], 0.08)
+      board.current.localToWorld(d.s)
+      board.current.getWorldQuaternion(d.qs)
+      d.e.set(...TARGETS[step.key].p)
+      room.current.localToWorld(d.e)
+      d.c.copy(d.s).lerp(d.e, 0.5)
+      d.c.y += 2.4
+      d.c.z += 1.6
+      if (TARGETS[step.key].flat) d.qe.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0))
+      else d.qe.copy(camera.quaternion)
+      d.ready = true
     }
-    white.current.instanceMatrix.needsUpdate = true
-    pink.current.instanceMatrix.needsUpdate = true
+    const raw = range(clay.story, ...step.at) / PRESS
+    if (raw >= 1) {
+      el.visible = false
+      return
+    }
+    el.visible = true
+    const t = easeInOutCubic(Math.max(0, raw))
+    const u = 1 - t
+    // quadratic bezier arc board → room
+    el.position.set(0, 0, 0).addScaledVector(d.s, u * u).addScaledVector(d.c, 2 * u * t).addScaledVector(d.e, t * t)
+    el.quaternion.slerpQuaternions(d.qs, d.qe, t)
+    const lift = Math.sin(Math.min(1, raw * 3) * Math.PI * 0.5) // pop off the board first
+    el.scale.setScalar((1 + lift * 0.12) * (1 - t * 0.65))
   })
   return (
-    <>
-      <instancedMesh ref={white} args={[geo, mats[0], counts.white]} frustumCulled={false} />
-      <instancedMesh ref={pink} args={[geo, mats[1], counts.pink]} frustumCulled={false} />
-    </>
-  )
-}
-
-// story phases (fractions of the pinned scroll)
-export const STORY = {
-  explode: [0.16, 0.38],
-  swarm: [0.3, 0.52],
-  gather: [0.54, 0.66],
-  rebuild: [0.7, 0.92],
-}
-
-function StoryScene() {
-  const room = useRef()
-  const spin = useRef()
-  const explode = useExploder(room)
-  const sm = useRef(0)
-  const v = useRef({ ex: 0, sw: 0, ga: 0 })
-  useFrame(({ clock }, dt) => {
-    sm.current = damp(sm.current, clay.story, 7, Math.min(dt, 0.05))
-    const p = sm.current
-    const ex = easeInOutCubic(range(p, ...STORY.explode)) * (1 - easeInOutCubic(range(p, ...STORY.rebuild)))
-    v.current.sw = range(p, ...STORY.swarm)
-    v.current.ga = range(p, ...STORY.gather)
-    explode(ex)
-    if (spin.current) {
-      spin.current.rotation.y = -0.7 + p * 1.6 + Math.sin(clock.elapsedTime * 0.2) * 0.03
-      // the exploded room shrinks away while the words take over, then returns
-      const away = range(p, 0.42, 0.58) * (1 - range(p, 0.66, 0.84))
-      spin.current.scale.setScalar(1 - away * 0.75)
-    }
-  })
-  return (
-    <group position={[0, -0.5, 0]}>
-      <group ref={spin}>
-        <group ref={room}>
-          <ModelRoom scale={0.4} position={[0, -0.4, 0]} />
-        </group>
-        <Fragments count={60} radius={[5, 10]} seed={33} spread={() => v.current.sw * 0.6} pinkRatio={0.25} />
-      </group>
-      <WordSwarm swarm={() => v.current.sw} gather={() => v.current.ga} />
+    <group ref={g}>
+      <RB s={[1.08, 1.08, 0.04]} m={mat} radius={0.06} />
     </group>
   )
 }
 
-/* ------------------------------------------------------------- CTA */
-const PROPS = [
-  (k) => <DiningChair key={k} />,
-  (k) => <Stool key={k} />,
-  (k) => <Vase key={k} kind="tall" />,
-  (k) => <Bowl key={k} />,
-  (k) => <Books key={k} count={4} />,
-  (k) => <SideTable key={k} />,
-  (k) => <PendantGlobe key={k} drop={0.3} ceiling={0.5} swing={false} />,
-  (k) => <FloorLamp key={k} />,
-  (k) => <Plant key={k} height={0.9} leaves={14} seed={k} />,
-  (k) => <Bench key={k} w={1} />,
-]
-
-function Tumbler({ seed, children }) {
-  const g = useRef()
-  const d = useMemo(() => {
-    const r = rnd(seed)
-    return {
-      p: new THREE.Vector3(r() * 22 - 11, r() * 14 - 7, -r() * 9 - 1),
-      rot: new THREE.Vector3(r() * 6, r() * 6, r() * 6),
-      spin: new THREE.Vector3((r() - 0.5) * 0.5, (r() - 0.5) * 0.5, (r() - 0.5) * 0.4),
-      rise: 0.15 + r() * 0.25,
-      s: 0.55 + r() * 0.5,
-    }
-  }, [seed])
-  useFrame(({ clock }) => {
-    if (!g.current) return
-    const t = clock.elapsedTime
-    const y = ((d.p.y + 7 + t * d.rise + clay.cta * 6) % 14) - 7
-    g.current.position.set(d.p.x + store.pointer.x * 0.4 * (1 + d.p.z * -0.1), y, d.p.z)
-    g.current.rotation.set(d.rot.x + d.spin.x * t, d.rot.y + d.spin.y * t, d.rot.z + d.spin.z * t)
-    g.current.scale.setScalar(d.s)
+function Moodboard({ m, boardRef, roomRef }) {
+  const logoTex = useTexture('/logo.jpg')
+  const logo = useRef()
+  const logoMat = useMemo(() => {
+    logoTex.colorSpace = THREE.SRGBColorSpace
+    return new THREE.MeshStandardMaterial({ map: logoTex, roughness: 0.7, transparent: true, opacity: 0 })
+  }, [logoTex])
+  useFrame(() => {
+    const a = range(clay.story, ...MOODBOARD_LOGO)
+    if (!logo.current) return
+    logo.current.visible = a > 0.001
+    const e = easeOutCubic(a)
+    logo.current.scale.setScalar(1.35 - 0.35 * e) // pressed into the board
+    logo.current.position.z = 0.09 + (1 - e) * 0.5
+    logoMat.opacity = Math.min(1, a * 2)
   })
-  return <group ref={g}>{children}</group>
+  return (
+    <group ref={boardRef} position={[-3.2, 1.55, -0.8]} rotation={[0, 0.38, 0]}>
+      {/* linen pin-board with a thin frame */}
+      <B s={[4.3, 3.0, 0.08]} m={m.board} />
+      <B s={[4.42, 0.06, 0.1]} p={[0, 1.53, 0]} m={m.frame} />
+      <B s={[4.42, 0.06, 0.1]} p={[0, -1.53, 0]} m={m.frame} />
+      <B s={[0.06, 3.1, 0.1]} p={[-2.18, 0, 0]} m={m.frame} />
+      <B s={[0.06, 3.1, 0.1]} p={[2.18, 0, 0]} m={m.frame} />
+      {/* pencil outlines where each swatch was pinned, and a pin */}
+      {SLOTS.map(([x, y], i) => (
+        <group key={i} position={[x, y, 0.045]}>
+          <B s={[1.16, 0.012, 0.002]} p={[0, 0.58, 0]} m={m.pencil} shadow={false} />
+          <B s={[1.16, 0.012, 0.002]} p={[0, -0.58, 0]} m={m.pencil} shadow={false} />
+          <B s={[0.012, 1.16, 0.002]} p={[-0.58, 0, 0]} m={m.pencil} shadow={false} />
+          <B s={[0.012, 1.16, 0.002]} p={[0.58, 0, 0]} m={m.pencil} shadow={false} />
+          <Sph radius={0.035} p={[0, 0.5, 0.06]} m="clayPink" seg={10} />
+        </group>
+      ))}
+      <mesh ref={logo} position={[0, 0, 0.09]} material={logoMat} visible={false}>
+        <circleGeometry args={[0.95, 64]} />
+      </mesh>
+    </group>
+  )
 }
 
-function CtaScene() {
-  const list = useMemo(() => Array.from({ length: 34 }, (_, i) => i), [])
+function StudyRoom({ m, roomRef }) {
+  const curtains = useRef()
+  useFrame(() => {
+    // curtains unfold once the linen swatch lands
+    const c = range(clay.story, MOODBOARD_STEPS[4].at[0] + (MOODBOARD_STEPS[4].at[1] - MOODBOARD_STEPS[4].at[0]) * PRESS, MOODBOARD_STEPS[4].at[1] + 0.04)
+    if (curtains.current) {
+      curtains.current.visible = c > 0.001
+      curtains.current.scale.set(1, Math.max(0.001, easeOutCubic(c)), 1)
+    }
+  })
+  return (
+    <group ref={roomRef} position={[2.5, 0, 0.1]} rotation={[0, -0.62, 0]} scale={0.34}>
+      <MaterialMode.Provider value="clayWhite">
+        <Shell floor={m.floor} wall={m.walls} ceiling={false} left={{ door: false }} windows={[{ x: 0.6, w: 3.8, sill: 0.4, top: 3.2 }]} sky={m.sky} skirting={false} />
+        <Sofa position={[0, 0, -3.25]} w={3} m={m.sofa} leg="clayWhite" pillows={['clayWhite', 'clayWhite', 'clayWhite']} />
+        <CoffeeTable position={[0, 0, -1.2]} top={m.table} base="clayWhite" />
+        <Armchair position={[-2.5, 0, -0.9]} rotation={[0, 1.1, 0]} />
+        <Armchair position={[2.5, 0, -0.9]} rotation={[0, -1.1, 0]} />
+        <Rug position={[0, 0, -1.6]} w={4.2} d={2.8} />
+        <group ref={curtains} position={[0, 3.55, -4.72]}>
+          <Curtain position={[-1.75, 0, 0]} w={1} h={3.2} m={m.curtain} />
+          <Curtain position={[2.95, 0, 0]} w={1} h={3.2} m={m.curtain} />
+        </group>
+        {/* the lamp: clay until the brass swatch lands */}
+        <group position={[-3.8, 0, -3.3]}>
+          <Cyl rt={0.18} h={0.04} p={[0, 0.02, 0]} m={m.lamp} />
+          <Cyl rt={0.02} h={1.7} p={[0, 0.87, 0]} m={m.lamp} seg={10} />
+          <Cyl rt={0.2} rb={0.32} h={0.36} p={[0, 1.85, 0]} m={m.lamp} seg={32} open />
+          <Sph radius={0.08} p={[0, 1.76, 0]} m={m.bulb} shadow={false} seg={14} />
+        </group>
+      </MaterialMode.Provider>
+    </group>
+  )
+}
+
+function MoodboardScene() {
+  const m = useMoodboardMaterials()
+  const boardRef = useRef()
+  const roomRef = useRef()
+  const lampLight = useRef()
+  const brass = useMemo(() => new THREE.Color('#c9a45c'), [])
+  const velvet = useMemo(() => new THREE.Color('#d98ca0'), [])
+  const plasterTint = useMemo(() => new THREE.Color('#f6ebe7'), [])
+  const white = useMemo(() => new THREE.Color('#ffffff'), [])
+
+  useFrame(() => {
+    const p = clay.story
+    const landed = (s) => range(p, s.at[0] + (s.at[1] - s.at[0]) * PRESS, s.at[1])
+    const [floor, walls, sofa, table, , lamp] = MOODBOARD_STEPS.map(landed)
+    const pulse = (a) => Math.sin(Math.min(1, a) * Math.PI) * 0.35
+    // texture swaps (same shader — only the texture uniform changes)
+    m.floor.map = floor > 0 ? m.tex.floor : WHITE_TEX
+    m.floor.color.lerpColors(m.clayColor, white, Math.min(1, floor * 2))
+    m.walls.map = walls > 0 ? m.tex.walls : WHITE_TEX
+    m.walls.color.lerpColors(m.clayColor, plasterTint, Math.min(1, walls * 2))
+    m.table.map = table > 0 ? m.tex.table : WHITE_TEX
+    m.table.color.lerpColors(m.clayColor, white, Math.min(1, table * 2))
+    m.sofa.color.lerpColors(m.clayColor, velvet, easeOutCubic(sofa))
+    m.lamp.color.lerpColors(m.clayColor, brass, easeOutCubic(lamp))
+    m.lamp.metalness = 0.35 * lamp
+    m.lamp.roughness = 0.6 - 0.3 * lamp
+    m.bulb.emissiveIntensity = 2.6 * lamp
+    if (lampLight.current) lampLight.current.intensity = 3.5 * lamp
+    // a soft flash when a material lands
+    for (const [mat, a] of [[m.floor, floor], [m.walls, walls], [m.sofa, sofa], [m.table, table]]) mat.emissive.setScalar(pulse(a) * 0.25)
+  })
+
+  return (
+    <group position={[0, -0.6, 0]}>
+      <Plane s={[40, 40]} r={[-Math.PI / 2, 0, 0]} p={[0, 0, 0]} m={m.ground} receiveShadow />
+      <Moodboard m={m} boardRef={boardRef} roomRef={roomRef} />
+      <StudyRoom m={m} roomRef={roomRef} />
+      {MOODBOARD_STEPS.map((s, i) => (
+        <Swatch key={s.key} i={i} step={s} mat={m.swatch[s.key]} board={boardRef} room={roomRef} />
+      ))}
+      <pointLight ref={lampLight} position={[1.0, 1.0, 1.4]} intensity={0} distance={4} color="#ffc98a" />
+    </group>
+  )
+}
+
+/* ================================================================ CURTAIN REVEAL */
+const MODEL = (id) => `/models/${id}/${id}_1k.gltf`
+function Model({ id, h, scale, rotY = 0 }) {
+  const { scene } = useGLTF(MODEL(id))
+  const obj = useMemo(() => {
+    const root = scene.clone(true)
+    root.traverse((o) => {
+      if (o.isMesh) {
+        o.castShadow = true
+        o.receiveShadow = true
+      }
+    })
+    root.rotation.y = rotY
+    root.updateMatrixWorld(true)
+    const box = new THREE.Box3().setFromObject(root)
+    const size = box.getSize(new THREE.Vector3())
+    root.position.set(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2)
+    const g = new THREE.Group()
+    g.add(root)
+    g.scale.setScalar(scale ?? (h ? h / size.y : 1))
+    return g
+  }, [scene]) // eslint-disable-line react-hooks/exhaustive-deps
+  return <primitive object={obj} />
+}
+
+function CurtainScene() {
+  const [parquet, plaster, linenN, art] = useTexture([
+    '/textures/herringbone_parquet/diff.jpg',
+    '/textures/plastered_wall_02/diff.jpg',
+    '/textures/rough_linen/nor.jpg',
+    '/textures/photos/art-blush.jpg',
+  ])
+  const { size } = useThree()
+  const narrow = size.width / size.height < 1
+  const mats = useMemo(() => {
+    const rep = (t, x, y, srgb = true) => {
+      const c = t.clone()
+      c.wrapS = c.wrapT = THREE.RepeatWrapping
+      c.repeat.set(x, y)
+      c.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace
+      c.needsUpdate = true
+      return c
+    }
+    art.colorSpace = THREE.SRGBColorSpace
+    return {
+      floor: new THREE.MeshStandardMaterial({ map: rep(parquet, 3, 2), roughness: 0.55 }),
+      wall: new THREE.MeshStandardMaterial({ map: rep(plaster, 3, 1.5), color: '#e8cfcb', roughness: 0.95 }),
+      curtain: new THREE.MeshPhysicalMaterial({ color: '#e9c3c8', normalMap: rep(linenN, 3, 5, false), roughness: 0.92, sheen: 1, sheenColor: new THREE.Color('#fff0f2'), sheenRoughness: 0.5, side: THREE.DoubleSide }),
+      art: new THREE.MeshStandardMaterial({ map: art, roughness: 0.8 }),
+      brass: getMat('brass'),
+      globe: new THREE.MeshStandardMaterial({ color: '#fff3e2', emissive: new THREE.Color('#ffcf8f'), emissiveIntensity: 2.2, toneMapped: false }),
+    }
+  }, [parquet, plaster, linenN, art])
+  const left = useRef()
+  const right = useRef()
+  const lamp = useRef()
+  const sm = useRef(0)
+  useFrame(({ clock }, dt) => {
+    sm.current = damp(sm.current, range(clay.cta, ...CURTAIN_OPEN), 5, Math.min(dt, 0.05))
+    const o = easeInOutCubic(sm.current)
+    const w = narrow ? 2.2 : 3.6
+    if (left.current) {
+      left.current.position.x = -w * 0.5 - o * w * 0.95
+      left.current.scale.x = 1 - o * 0.55
+    }
+    if (right.current) {
+      right.current.position.x = w * 0.5 + o * w * 0.95
+      right.current.scale.x = 1 - o * 0.55
+    }
+    if (lamp.current) lamp.current.intensity = 5.5 + Math.sin(clock.elapsedTime * 1.3) * 0.25
+  })
+  const cw = narrow ? 2.4 : 3.8
   return (
     <group>
-      {list.map((i) => (
-        <MaterialMode.Provider key={i} value={i % 4 === 0 ? 'clayPink' : 'clayWhite'}>
-          <Tumbler seed={100 + i * 7}>{PROPS[i % PROPS.length](i)}</Tumbler>
-        </MaterialMode.Provider>
-      ))}
-      <Fragments count={90} radius={[3, 12]} seed={51} pinkRatio={0.22} speed={0.7} />
+      {/* warm corner */}
+      <Plane s={[16, 10]} r={[-Math.PI / 2, 0, 0]} p={[0, 0, -1]} m={mats.floor} />
+      <Plane s={[16, 7]} p={[0, 3.5, -3]} m={mats.wall} />
+      <group position={[-1.9, 2.05, -2.97]}>
+        <B s={[1.36, 1.72, 0.04]} p={[0, 0, 0.02]} m="blackMetal" />
+        <Plane s={[1.28, 1.64]} p={[0, 0, 0.045]} m={mats.art} />
+      </group>
+      <Suspense fallback={null}>
+        <group position={[1.15, 0, -1.4]} rotation={[0, -0.55, 0]}>
+          <Model id="mid_century_lounge_chair" scale={1.05} />
+        </group>
+        <group position={[2.6, 0, -2.3]}>
+          <Model id="potted_plant_01" h={1.7} />
+        </group>
+      </Suspense>
+      <group position={[-0.15, 0, -2.2]}>
+        <Cyl rt={0.16} h={0.03} p={[0, 0.015, 0]} m={mats.brass} />
+        <Cyl rt={0.014} h={1.55} p={[0, 0.79, 0]} m={mats.brass} seg={10} />
+        <Sph radius={0.17} p={[0, 1.7, 0]} m={mats.globe} shadow={false} seg={24} />
+      </group>
+      <pointLight ref={lamp} position={[-0.15, 1.7, -1.9]} intensity={5.5} distance={7} decay={1.6} color="#ffc488" castShadow shadow-mapSize={[1024, 1024]} />
+      <hemisphereLight args={['#ffe9e4', '#3a2622', 0.35]} />
+      <directionalLight position={[-6, 6, 3]} intensity={0.9} color="#ffd7c2" castShadow shadow-mapSize={[1024, 1024]} />
+
+      {/* the curtains, close to the camera */}
+      <group position={[0, 4.4, 2.6]}>
+        <Cyl rt={0.03} h={14} r={[0, 0, Math.PI / 2]} p={[0, 0.03, 0]} m={mats.brass} seg={12} />
+        <group ref={left}>
+          <Curtain w={cw} h={8.5} m={mats.curtain} />
+        </group>
+        <group ref={right}>
+          <Curtain w={cw} h={8.5} m={mats.curtain} />
+        </group>
+      </group>
     </group>
   )
 }
 
 /* ------------------------------------------------------------- canvas */
 const SETUPS = {
-  hero: { cam: { position: [13, 9.5, 14], fov: 30 }, look: [0, 0.6, 0], dark: false, Scene: HeroScene },
-  story: { cam: { position: [12, 9, 13.5], fov: 34 }, look: [0, 0.2, 0], dark: true, Scene: StoryScene },
-  cta: { cam: { position: [0, 0, 12], fov: 42 }, look: [0, 0, 0], dark: true, Scene: CtaScene },
+  hero: { cam: { position: [13, 9.5, 14], fov: 30 }, look: [0, 0.6, 0], Scene: HeroScene, lights: true, exposure: 1.08 },
+  moodboard: { cam: { position: [0.4, 3.4, 10.5], fov: 34 }, look: [0, 0.75, 0], Scene: MoodboardScene, lights: true, exposure: 1.05 },
+  curtain: { cam: { position: [0, 1.55, 7], fov: 42 }, look: [0, 1.35, 0], Scene: CurtainScene, lights: false, exposure: 1.0, bg: '#2a1d1c' },
 }
 
-function LookAt({ target }) {
-  const { camera } = useThree()
+function CameraSetup({ look, base, narrowBack = 1 }) {
+  const { camera, size } = useThree()
   useEffect(() => {
-    camera.lookAt(...target)
-  }, [camera, target])
+    camera.position.set(...base).multiplyScalar(size.width / size.height < 1 ? narrowBack : 1)
+    camera.lookAt(...look)
+    camera.updateProjectionMatrix()
+  }, [camera, look, base, size.width, size.height, narrowBack])
   return null
 }
 
@@ -379,16 +511,19 @@ export default function ClayCanvas({ scene = 'hero', isMobile = false, paused = 
       dpr={[1, isMobile ? 1.3 : 1.7]}
       frameloop={paused ? 'never' : 'always'}
       camera={s.cam}
-      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
-      onCreated={({ gl }) => {
+      gl={{ antialias: true, alpha: !s.bg, powerPreference: 'high-performance' }}
+      onCreated={({ gl, scene: sc }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping
-        gl.toneMappingExposure = s.dark ? 1.0 : 1.08
+        gl.toneMappingExposure = s.exposure
         gl.shadowMap.type = THREE.PCFSoftShadowMap
+        if (s.bg) sc.background = new THREE.Color(s.bg)
       }}
     >
-      <LookAt target={s.look} />
-      <ClayLights dark={s.dark} />
-      <s.Scene />
+      <CameraSetup look={s.look} base={s.cam.position} narrowBack={scene === 'moodboard' ? 1.45 : 1} />
+      {s.lights && <ClayLights />}
+      <Suspense fallback={null}>
+        <s.Scene />
+      </Suspense>
     </Canvas>
   )
 }

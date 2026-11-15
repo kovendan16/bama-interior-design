@@ -48,10 +48,10 @@ export function Loader({ webgl }) {
         },
       })
       const fast = store.reducedMotion
-      tl.to('.loader-inner', { autoAlpha: 0, y: -20, duration: 0.6, ease: 'power2.in' })
-      tl.to(root.current, { yPercent: -100, duration: fast ? 0.4 : 1.2, ease: 'expo.inOut' }, '-=0.1')
-      tl.to(store, { intro: 1, duration: fast ? 0.1 : 3.4, ease: 'power2.inOut' }, '-=0.9')
-      tl.from('.nav', { yPercent: -120, autoAlpha: 0, duration: 1.2, ease: 'expo.out' }, '-=2.6')
+      tl.to('.loader-inner', { autoAlpha: 0, scale: 0.96, duration: 0.5, ease: 'power2.in' })
+      tl.to(root.current, { autoAlpha: 0, duration: fast ? 0.3 : 0.8, ease: 'power2.out' }, '-=0.1')
+      tl.to(store, { intro: 1, duration: fast ? 0.1 : 3.4, ease: 'power2.inOut' }, '-=0.6')
+      tl.from('.topbar', { yPercent: -120, autoAlpha: 0, duration: 1.2, ease: 'expo.out' }, '-=3.0')
       tl.from('.hero .wi', { yPercent: 115, rotate: 5, duration: 1.4, ease: 'expo.out', stagger: 0.06 }, '-=2.4')
       tl.from('.hero [data-hero-fade]', { y: 30, autoAlpha: 0, duration: 1.2, ease: 'power3.out', stagger: 0.12 }, '-=1.6')
     }
@@ -68,34 +68,11 @@ export function Loader({ webgl }) {
   return (
     <div className="loader" ref={root} role="status" aria-live="polite" aria-label={`Loading ${pct}%`}>
       <div className="loader-inner">
-        <div className="loader-grid" aria-hidden="true" />
-        <svg className="loader-orbits" viewBox="-500 -500 1000 1000" aria-hidden="true">
-          {[480, 380, 290, 210].map((r) => (
-            <circle key={r} r={r} className="ring-faint" />
-          ))}
-          <circle r="150" className="ring" />
-          <circle r="96" className="ring ring-dash" />
-          <g className="orbit orbit-a">
-            <circle cx="150" cy="0" r="6" className="dot" />
-            <path d="M0 0 L150 0 A150 150 0 0 0 106 -106 Z" className="sweep" />
-          </g>
-          <g className="orbit orbit-b">
-            <circle cx="0" cy="-96" r="3.5" className="dot dot-pink" />
-          </g>
-          <line x1="-500" y1="0" x2="500" y2="0" className="axis" />
-          <line x1="0" y1="-500" x2="0" y2="500" className="axis" />
-        </svg>
-        <img className="loader-logo" src="/logo.jpg" alt={`${SITE.brand} ${SITE.brandSuffix}`} width="84" height="84" />
-        <span className="loader-label tl">● {SITE.brand} preloader</span>
-        <span className="loader-label bl">seq 001 — est. 2026</span>
-        <div className="loader-count">
-          <span className="loader-label">loading</span>
-          <strong>{String(pct).padStart(3, '0')}</strong>
-          <em>%</em>
-        </div>
+        <img className="loader-logo" src="/logo.jpg" alt={`${SITE.brand} ${SITE.brandSuffix}`} width="150" height="150" />
         <div className="loader-bar">
           <span style={{ transform: `scaleX(${pct / 100})` }} />
         </div>
+        <p className="loader-pct">{pct}%</p>
       </div>
     </div>
   )
