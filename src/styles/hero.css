@@ -1,0 +1,65 @@
+/* ---------------------------------------------------------------- pinned transformation hero */
+.hero-tf { position: relative; z-index: 3; height: calc(var(--vh) * 8); background: #fff; }
+.hero-tf-pin {
+  position: sticky; top: 0; height: var(--vh);
+  display: grid; grid-template-columns: minmax(360px, 1fr) 1.85fr; grid-template-areas: 'copy frame';
+  gap: clamp(20px, 3vw, 52px); padding: 116px var(--gutter) 26px;
+}
+.hero-tf-frame {
+  grid-area: frame; position: relative; min-height: 0; overflow: hidden;
+  border-radius: 32px; background: #efe7e4;
+  box-shadow: 0 40px 90px -50px rgba(70, 30, 45, 0.45), 0 0 0 1px rgba(21, 18, 20, 0.04);
+}
+.hero-tf-frame canvas { display: block; }
+.hero-tf-fallback { position: absolute; inset: 0; background-size: cover; background-position: center; }
+.hero-tf-badge {
+  position: absolute; left: 18px; bottom: 18px; display: flex; align-items: center; gap: 9px;
+  padding: 8px 15px; border-radius: 999px; background: rgba(255, 255, 255, 0.9);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  font-size: 0.78rem; font-weight: 500; color: #151214; box-shadow: 0 10px 30px -18px rgba(70, 30, 45, 0.4);
+}
+.hero-tf-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #d4849a; box-shadow: 0 0 0 0 rgba(212, 132, 154, 0.6); animation: tf-ping 1.8s infinite; }
+@keyframes tf-ping { 70% { box-shadow: 0 0 0 10px rgba(212, 132, 154, 0); } 100% { box-shadow: 0 0 0 0 rgba(212, 132, 154, 0); } }
+
+.hero-tf-copy { grid-area: copy; display: grid; grid-template-rows: 1fr auto auto; min-height: 0; }
+.hero-tf-intro, .hero-tf-stage { grid-row: 1; grid-column: 1; align-self: center; transition: opacity 0.6s, transform 0.6s cubic-bezier(.2, .8, .2, 1); }
+.hero-tf-intro.is-out { opacity: 0; transform: translateY(-22px); pointer-events: none; }
+.hero-tf-stage { opacity: 0; transform: translateY(24px); pointer-events: none; }
+.hero-tf-stage.is-in { opacity: 1; transform: none; pointer-events: auto; }
+.hero-tf-title, .hero-tf-text { animation: tf-in 0.7s cubic-bezier(.2, .8, .2, 1); }
+@keyframes tf-in { from { opacity: 0; transform: translateY(14px); } }
+
+.hero-tf-steps { position: relative; grid-row: 2; list-style: none; margin: 16px 0 0; padding: 14px 0 0; display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: column; grid-template-rows: repeat(3, auto); gap: 6px 18px; border-top: 1px solid rgba(21, 18, 20, 0.08); }
+.hero-tf-steps .rail { position: absolute; left: 0; right: 0; top: -1px; height: 2px; background: transparent; }
+.hero-tf-steps .rail i { display: block; height: 100%; background: #d4849a; transform: scaleX(0); transform-origin: left; }
+.hero-tf-steps li { position: relative; padding-left: 18px; font-size: 0.82rem; color: #8d8288; transition: color 0.35s; }
+.hero-tf-steps li .dot {
+  position: absolute; left: 0; top: 5px; width: 9px; height: 9px; border-radius: 50%;
+  background: #fff; border: 1px solid rgba(21, 18, 20, 0.2); transition: all 0.35s;
+}
+.hero-tf-steps li.is-done { color: #4a4247; }
+.hero-tf-steps li.is-done .dot { background: #eaa9b9; border-color: #eaa9b9; }
+.hero-tf-steps li.is-active { color: #151214; font-weight: 600; }
+.hero-tf-steps li.is-active .dot { background: #d4849a; border-color: #d4849a; transform: scale(1.3); box-shadow: 0 0 0 4px #fbe7ec; }
+.hero-tf-keys { grid-row: 3; margin: 10px 0 0; display: flex; align-items: center; gap: 8px; font-size: 0.74rem; color: #8d8288; }
+
+@media (max-width: 900px) {
+  .hero-tf { height: calc(var(--vh) * 7); }
+  .hero-tf-pin {
+    grid-template-columns: 1fr; grid-template-areas: 'frame' 'copy'; grid-template-rows: minmax(0, 1.05fr) auto;
+    gap: 16px; padding: 104px 14px 16px;
+  }
+  .hero-tf-frame { border-radius: 22px; }
+  .hero-tf-copy { grid-template-rows: auto; }
+  .hero-tf-steps, .hero-tf-keys { display: none; }
+  .hero-tf-intro h1 { font-size: 2.2rem; margin-top: 8px; }
+  .hero-tf-intro p.mt-5, .hero-tf-stage p.mt-4 { font-size: 0.92rem; margin-top: 10px; }
+  .hero-tf-intro .mt-7 { margin-top: 14px; }
+  .hero-tf-intro .mt-8 { margin-top: 12px; }
+  .hero-tf-stage h2 { font-size: 1.8rem; }
+  .hero-tf-badge { left: 10px; bottom: 10px; font-size: 0.7rem; padding: 6px 12px; }
+}
+@media (max-height: 760px) and (min-width: 901px) {
+  .hero-tf-keys { display: none; }
+  .hero-tf-intro h1 { font-size: clamp(2.2rem, 3.6vw, 3.4rem); }
+}

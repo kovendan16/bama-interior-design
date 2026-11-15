@@ -1,50 +1,41 @@
-# Ardene Studio — Immersive 3D Interior Design Website
+# Bama Interior Design — 3D interior design website
 
-A scroll-driven 3D walkthrough of a luxury home, built with React + Vite, Three.js,
-React Three Fiber, Drei, GSAP + ScrollTrigger and Lenis smooth scrolling.
+React + Vite, Three.js / React Three Fiber / Drei, GSAP + ScrollTrigger, Lenis,
+Tailwind CSS (utilities only) and Lucide icons.
 
 ## Run
 
 ```bash
 npm install
-npm run dev       # http://localhost:5173
+npm run dev       # http://localhost:5173 (or the next free port)
 npm run build     # production build in dist/
 npm run preview   # serve the production build
 ```
 
-## What's inside
+## Page structure
 
-| Section | 3D experience |
-|---|---|
-| Hero | Camera flies into a furnished living room; daylight drifts, window shadows move, curtains sway |
-| Walkthrough | Scroll walks the camera through doorways: living room → bedroom → kitchen |
-| Empty → Dream room | Raw concrete shell; floors, walls, furniture, lights and décor animate in with scroll |
-| Dollhouse | Miniature six-room house; scroll rotates it and lifts the floors apart; click a room to fly in |
-| Portfolio | Separate lazy-loaded viewer: orbit, zoom, and a 360° "step inside" mode for 5 projects |
-| Services | Showroom: furniture turntable, pendant lighting, coffered ceiling and fluted walls by category |
-| About | Concrete architectural hall with light shafts and a crane-up camera move |
-| Process | Blueprint → wireframe → material swatches → finished room |
-| Contact | Fireside lounge background, validated contact form, phone/email CTAs |
+| Section | Component | Notes |
+|---|---|---|
+| Hero — empty room → luxury room | `components/sections/Hero.jsx`, `three/hero/TransformCanvas.jsx`, `three/rooms/TransformRoom.jsx` | Pinned; one GSAP timeline (`three/transformTimeline.js`) scrubbed by scroll. ↑ / ↓ keys jump between stages. |
+| About | `sections/About.jsx` | |
+| Services (8 cards) | `sections/Services.jsx` | |
+| Projects + lightbox | `sections/Projects.jsx` | "View in 3D" opens the room in the showcase |
+| Interactive 3D showcase | `sections/Showcase.jsx`, `three/ShowcaseCanvas.jsx` | Rotate, zoom, step inside |
+| Design process (7 steps) | `sections/Process.jsx` | |
+| Moodboard → room | `sections/Story.jsx`, `three/clay/ClayCanvas.jsx` | |
+| Why choose Bama | `sections/WhyChoose.jsx` | |
+| Testimonials | `sections/Testimonials.jsx` | **Placeholders** — replace with genuine reviews |
+| Curtain reveal | `sections/Cta.jsx` | |
+| Contact (+ WhatsApp) | `sections/Contact.jsx` | Wire `submit` to your backend/form service |
+| Footer | `components/Footer.jsx` | |
 
-## Customising
+## Editing content
 
-- **Studio details** (name, phone, email, address): `src/lib/site.js`
-- **Copy** (projects, services, process steps, room chapters): `src/lib/content.js`
-- **Contact form**: wire the `submit` handler in `src/components/sections/Contact.jsx` to your backend
-  or form service (it currently simulates a successful send).
-- **Camera choreography**: `src/three/cameraPaths.js` (one spline per section)
-- **Rooms & furniture**: `src/three/rooms/*` and `src/three/furniture/*`
-- **Materials**: `src/three/materials.js` — textures are generated procedurally in `textures.js`,
-  so there are no heavy asset downloads. To use real GLB models, load them with Drei's `useGLTF`
-  inside any room component.
+- **Company details** (phone, WhatsApp, email, address, hours, social links) — `src/lib/site.js`. All values are placeholders.
+- **Section copy, services, projects, process steps, stage messages, testimonials** — `src/lib/sections.js`.
+- **Transformation timing** — `src/three/transformTimeline.js`.
 
-## Performance notes
+## Assets & licences
 
-- One fixed WebGL canvas for the whole site; rooms far from the camera are culled.
-- Fixed light rig (no per-room lights) so shaders never recompile mid-scroll; all shaders are
-  pre-compiled behind the loader.
-- Shared, cached geometries/materials; instanced books, leaves and fluting.
-- Adaptive pixel ratio (`PerformanceMonitor`), smaller shadow maps and no backdrop blur on mobile.
-- The portfolio viewer is code-split and mounted only when near; the main canvas pauses while
-  the portfolio covers the screen.
-- Respects `prefers-reduced-motion` (no smooth scroll, no parallax, instant intro).
+- 3D furniture, textures and lighting (HDRI) — Poly Haven, CC0 (`public/models`, `public/textures`, `public/hdri`).
+- Photos — Unsplash Licence. Full list in `public/images/PHOTO-CREDITS.txt`.

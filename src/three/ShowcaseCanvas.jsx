@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Environment, Lightformer, ContactShadows } from '@react-three/drei'
+import { OrbitControls, Environment, ContactShadows } from '@react-three/drei'
+import { EffectComposer, N8AO, ToneMapping } from '@react-three/postprocessing'
+import { ToneMappingMode } from 'postprocessing'
 import gsap from 'gsap'
 import { ROOM_COMPONENTS } from './rooms/Rooms'
+import { TransformRoom } from './rooms/TransformRoom'
 import { PRACTICALS } from './world'
 
 const OVERVIEW = { pos: new THREE.Vector3(6.2, 6.2, 9.6), target: new THREE.Vector3(0.3, 0.9, -1.9) }
@@ -41,19 +44,14 @@ function StudioLights({ room }) {
       <directionalLight color="#dfe8ff" intensity={0.6} position={[6, 8, 10]} />
       <pointLight ref={p1} distance={10} decay={2} />
       <pointLight ref={p2} distance={9} decay={2} />
-      <Environment resolution={128} frames={1} environmentIntensity={0.6}>
-        <Lightformer form="rect" intensity={2.2} color="#fff1dc" position={[0, 5, -6]} scale={[10, 4, 1]} />
-        <Lightformer form="rect" intensity={1.2} color="#ffd9b0" position={[0, 8, 0]} rotation-x={Math.PI / 2} scale={[12, 12, 1]} />
-        <Lightformer form="rect" intensity={0.8} color="#c8d8ff" position={[-8, 2, 2]} rotation-y={Math.PI / 2} scale={[8, 3, 1]} />
-        <Lightformer form="rect" intensity={0.6} color="#ffffff" position={[0, 2, 9]} rotation-y={Math.PI} scale={[12, 3, 1]} />
-      </Environment>
+      <Environment files="/hdri/art_studio.hdr" environmentIntensity={0.65} />
     </>
   )
 }
 
 function RoomStage({ room, inside }) {
   const g = useRef()
-  const Comp = ROOM_COMPONENTS[room]
+  const Comp = room === 'living' ? TransformRoom : ROOM_COMPONENTS[room]
   useEffect(() => {
     if (!g.current) return
     gsap.fromTo(g.current.scale, { y: 0.001 }, { y: 1, duration: 1.3, ease: 'expo.out' })
@@ -61,7 +59,7 @@ function RoomStage({ room, inside }) {
   }, [room])
   return (
     <group ref={g}>
-      <Comp shell={{ ceiling: inside, front: inside, left: { door: false }, right: { door: false } }} />
+      <Comp key={room} shell={{ ceiling: inside, front: inside, left: { door: false }, right: { door: false } }} />
     </group>
   )
 }
@@ -176,14 +174,20 @@ export default function PortfolioCanvas({ room, mode, zoomRef, isMobile, onInter
       onCreated={({ gl, scene }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping
         gl.toneMappingExposure = 1.05
-        scene.background = new THREE.Color('#14110e')
-        scene.fog = new THREE.Fog('#14110e', 26, 50)
+        scene.background = new THREE.Color('#f3ece9')
+        scene.fog = new THREE.Fog('#f3ece9', 28, 55)
       }}
     >
       <StudioLights room={room} />
       <RoomStage room={room} inside={mode === 'inside'} />
       <ContactShadows position={[0, -0.25, 0]} scale={16} opacity={0.5} blur={2.5} far={1} frames={1} />
       <Controls mode={mode} zoomRef={zoomRef} onInteract={onInteract} />
+      {!isMobile && (
+        <EffectComposer multisampling={0} disableNormalPass>
+          <N8AO halfRes aoRadius={0.55} intensity={2.2} distanceFalloff={0.7} quality="medium" />
+          <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+        </EffectComposer>
+      )}
     </Canvas>
   )
 }

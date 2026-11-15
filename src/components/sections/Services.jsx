@@ -1,60 +1,47 @@
-import { useRef, useState } from 'react'
-import { Split } from '../Split'
-import { SERVICES } from '../../lib/content'
-import { useSectionProgress, scrollToTarget } from '../../lib/scroll'
-import { store } from '../../lib/store'
+import { ArrowUpRight } from 'lucide-react'
+import { SERVICES_LIST } from '../../lib/sections'
+import { SectionHeading } from '../ui/SectionHeading'
+import { Icon } from '../ui/Icon'
+import { scrollToTarget } from '../../lib/scroll'
 
 export function Services() {
-  const ref = useRef()
-  const [active, setActive] = useState(0)
-  useSectionProgress(ref, 'services', (p) => {
-    const i = Math.min(SERVICES.length - 1, Math.floor(p * SERVICES.length))
-    store.service = i
-    setActive((prev) => (prev === i ? prev : i))
-  })
-
-  // jump the scroll position to the slice of the section that shows service i
-  const go = (i) => {
-    const el = ref.current
-    const top = el.getBoundingClientRect().top + window.scrollY
-    const vh = window.innerHeight
-    const start = top - vh
-    const end = top + el.offsetHeight - vh
-    scrollToTarget(start + ((i + 0.4) / SERVICES.length) * (end - start))
-  }
-
-  const s = SERVICES[active]
   return (
-    <section id="services" ref={ref} className="section services" aria-labelledby="services-title">
-      <div className="sticky">
-        <div className="services-panel glass">
-          <p className="kicker">
-            <span className="num">07</span> Services
-          </p>
-          <h2 id="services-title" className="h2">
-            <Split text="Every layer of a room, designed." data-split />
-          </h2>
-          <ul className="service-list" role="tablist" aria-label="Service categories">
-            {SERVICES.map((sv, i) => (
-              <li key={sv.title}>
-                <button role="tab" aria-selected={i === active} className={i === active ? 'is-active' : ''} onClick={() => go(i)}>
-                  <span className="idx">0{i + 1}</span>
-                  <span>{sv.title}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
+    <section id="services" className="ui-section is-warm" aria-labelledby="services-title">
+      <div className="ui-wrap">
+        <SectionHeading
+          id="services-title"
+          kicker="Our services"
+          title="Thoughtful Design."
+          highlight="Beautiful Living."
+          text="From a single room to a complete home or commercial space — one studio for planning, design, materials and execution."
+        />
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" data-stagger>
+          {SERVICES_LIST.map((s) => (
+            <article key={s.title} className="ui-card group flex flex-col overflow-hidden">
+              <div className="relative aspect-[5/4] overflow-hidden">
+                <img src={s.img} alt="" loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+                <span className="ui-icon absolute left-4 top-4 bg-white/90 backdrop-blur">
+                  <Icon name={s.icon} size={20} />
+                </span>
+              </div>
+              <div className="flex flex-1 flex-col p-6">
+                <h3 className="text-lg font-semibold tracking-[-0.02em] text-ink">{s.title}</h3>
+                <p className="mt-2 flex-1 text-[0.93rem] leading-relaxed text-ink-2">{s.text}</p>
+                <a
+                  href="#contact"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    scrollToTarget('#contact')
+                  }}
+                  className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-blush-600 no-underline transition group-hover:gap-2.5"
+                  aria-label={`Explore more about ${s.title}`}
+                >
+                  Explore More <ArrowUpRight size={16} aria-hidden="true" />
+                </a>
+              </div>
+            </article>
+          ))}
         </div>
-        <article className="service-detail glass" key={active} role="tabpanel" aria-live="polite">
-          <p className="kicker">{s.short}</p>
-          <h3 className="h3">{s.title}</h3>
-          <p>{s.text}</p>
-          <ul className="ticks">
-            {s.points.map((pt) => (
-              <li key={pt}>{pt}</li>
-            ))}
-          </ul>
-        </article>
       </div>
     </section>
   )

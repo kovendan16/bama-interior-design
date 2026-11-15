@@ -43,3 +43,8 @@ Photos used inside the 3D room (Unsplash License):
 textures/photos/window-view.jpg   1686987747972-a50b328b0b14
 textures/photos/art-neutral.jpg   1681235014294-588fea095706
 textures/photos/art-blush.jpg     1533157950006-c38844053d55
+
+Site section photos (Unsplash License):
+site/commercial.jpg     1775866914943-ba1415a35afc
+site/house.jpg          1678575326996-a1bf09b86158
+site/consultation.jpg   1616587656977-ac36a5a430bc

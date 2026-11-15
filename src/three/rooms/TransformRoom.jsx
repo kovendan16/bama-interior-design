@@ -4,8 +4,8 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { Shell } from './Shell'
 import { B, Cyl, Sph, Plane, InstancedCyl } from '../furniture/primitives'
-import { Rug } from '../furniture/living'
-import { ArcFloorLamp, PendantGlobe } from '../furniture/lighting'
+import { Rug, Books } from '../furniture/living'
+import { ArcFloorLamp, PendantGlobe, WallSconce } from '../furniture/lighting'
 import { Curtain } from '../furniture/decor'
 import { getMat } from '../materials'
 import { TF, styleMix } from '../transformTimeline'
@@ -190,7 +190,7 @@ function useRoomMaterials() {
 }
 
 /* =================== EMPTY ROOM → DREAM ROOM =================== */
-export function TransformRoom({ shell = {} }) {
+export function TransformRoom({ shell = {}, assetDelay = 0 }) {
   const m = useRoomMaterials()
   const tmp = useMemo(() => new THREE.Color(), [])
   const [loadReal, setLoadReal] = useState(false)
@@ -200,9 +200,9 @@ export function TransformRoom({ shell = {} }) {
     const id = setTimeout(() => {
       queue.splice(0).forEach((f) => f())
       setLoadReal(true)
-    }, 3500)
+    }, assetDelay)
     return () => clearTimeout(id)
-  }, [])
+  }, [assetDelay])
 
   // material morphs: raw → finished, then the room changes style
   useFrame(() => {
@@ -257,10 +257,18 @@ export function TransformRoom({ shell = {} }) {
             <Blob w={3.4} d={1.4} />
             <Real>
               <Model id="sofa_02" scale={[1.42, 1.12, 1.12]} mats={m.woodModels} />
+            </Real>
+          </Anim>
+          {/* stage 5 · cushions drop onto the sofa */}
+          <Anim k="pillows" from={{ y: 0.8, s: 0.6 }} position={[0, 0, -3.35]}>
+            <Real>
               <group position={[-0.75, 0.52, 0.12]} rotation={[-1.25, 0.25, 0]}>
                 <Model id="throw_pillows_01" scale={1.15} mats={m.pillows} />
               </group>
             </Real>
+          </Anim>
+          <Anim k="books" from={{ y: 0.4, s: 0.5 }} position={[-5.5, 0.68, -2.0]} rotation={[0, Math.PI / 2, 0]}>
+            <Books count={5} seed={9} />
           </Anim>
           <Anim k="chairL" from={{ x: -4, ry: 1.4 }} position={[-2.45, 0, -1.35]} rotation={[0, Math.PI / 2.6, 0]}>
             <Blob w={1.2} d={1.2} />
@@ -333,6 +341,13 @@ export function TransformRoom({ shell = {} }) {
       </Anim>
       <Anim k="arc" from={{ x: -2, ry: 0.8 }} position={[-3.85, 0, -3.4]} rotation={[0, -0.5, 0]}>
         <ArcFloorLamp />
+      </Anim>
+      {/* wall lights on the side walls */}
+      <Anim k="sconces" from={{ s: 0 }} position={[-5.86, 2.3, -3.6]} rotation={[0, Math.PI / 2, 0]}>
+        <WallSconce />
+      </Anim>
+      <Anim k="sconces" from={{ s: 0 }} position={[5.86, 2.3, -3.6]} rotation={[0, -Math.PI / 2, 0]}>
+        <WallSconce />
       </Anim>
       <Anim k="curtains" from={{ x: -1.1, sx: 0.08 }} position={[-2.85, 3.62, -4.7]}>
         <Curtain w={1.15} h={3.45} m={m.curtain} />

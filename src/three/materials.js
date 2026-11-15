@@ -25,11 +25,30 @@ const rep = (tex, x, y) => {
   return t
 }
 
+// Real photographic PBR textures (Poly Haven, CC0) for floors and walls of the
+// showcase rooms. Loaded on first use.
+const texLoader = new THREE.TextureLoader()
+const realTex = (dir, file, x, y, srgb) => {
+  const t = texLoader.load('/textures/' + dir + '/' + file + '.jpg')
+  t.wrapS = t.wrapT = THREE.RepeatWrapping
+  t.repeat.set(x, y)
+  t.anisotropy = 8
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+const realFloor = (color = '#ffffff') =>
+  new THREE.MeshStandardMaterial({
+    map: realTex('herringbone_parquet', 'diff', 4, 3.4, true),
+    normalMap: realTex('herringbone_parquet', 'nor', 4, 3.4),
+    roughnessMap: realTex('herringbone_parquet', 'rough', 4, 3.4),
+    color,
+  })
+
 const DEFS = {
   // woods
-  floorOak: () => new THREE.MeshStandardMaterial({ map: rep(woodPlanks('oak'), 6, 5), roughness: 0.42, metalness: 0, color: '#ffffff' }),
-  floorWalnut: () => new THREE.MeshStandardMaterial({ map: rep(woodPlanks('walnut'), 6, 5), roughness: 0.38 }),
-  floorAsh: () => new THREE.MeshStandardMaterial({ map: rep(woodPlanks('ash'), 6, 5), roughness: 0.5 }),
+  floorOak: () => realFloor('#ffffff'),
+  floorWalnut: () => realFloor('#9b7864'),
+  floorAsh: () => realFloor('#f1e6dc'),
   oak: () => new THREE.MeshStandardMaterial({ map: woodGrain('oak'), roughness: 0.5 }),
   walnut: () => new THREE.MeshStandardMaterial({ map: woodGrain('walnut'), roughness: 0.42 }),
   ash: () => new THREE.MeshStandardMaterial({ map: woodGrain('ash'), roughness: 0.55 }),
@@ -150,8 +169,14 @@ function fabric(color, sheenColor, roughness = 0.92) {
   })
 }
 
+// walls use the real lime-plaster scan, tinted to the requested colour
 function wall(color) {
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.92, roughnessMap: plasterNoise(2, 6), bumpMap: plasterNoise(2, 6), bumpScale: 0.15 })
+  return new THREE.MeshStandardMaterial({
+    color,
+    map: realTex('plastered_wall_02', 'diff', 2.5, 1.2, true),
+    normalMap: realTex('plastered_wall_02', 'nor', 2.5, 1.2),
+    roughness: 0.92,
+  })
 }
 
 export function getMat(name) {

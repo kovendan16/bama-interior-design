@@ -3,29 +3,26 @@ import { SITE } from '../lib/site'
 import { scrollToTarget } from '../lib/scroll'
 
 const LEFT = [
-  ['Spaces', '#living'],
-  ['Transform', '#transform'],
-  ['Gallery', '#gallery'],
+  ['About', '#about'],
+  ['Services', '#services'],
+  ['Projects', '#projects'],
 ]
 const RIGHT = [
-  ['Services', '#services'],
-  ['About', '#about'],
+  ['3D Showcase', '#showcase'],
+  ['Process', '#process'],
 ]
 
 // readable name of whichever section is in the middle of the screen
 const NAMES = {
   hero: 'Home',
-  living: 'Spaces',
-  bedroom: 'Spaces',
-  kitchen: 'Spaces',
-  transform: 'Transform',
-  dollhouse: 'Dollhouse',
-  portfolio: 'Portfolio',
-  gallery: 'Gallery',
-  services: 'Services',
   about: 'About',
+  services: 'Services',
+  projects: 'Projects',
+  showcase: '3D Showcase',
   process: 'Process',
-  story: 'Moodboard',
+  story: 'Process',
+  why: 'Why Bama',
+  testimonials: 'Reviews',
   cta: 'Your home',
   contact: 'Contact',
 }
@@ -50,7 +47,7 @@ export function Nav() {
       const s = y > 60
       setScrolled((prev) => (prev === s ? prev : s))
       const mid = window.innerHeight * 0.5
-      let id = 'hero'
+      let id = y < 40 ? 'hero' : null
       for (const el of document.querySelectorAll('main > section')) {
         const r = el.getBoundingClientRect()
         if (r.top <= mid && r.bottom > mid) {
@@ -58,8 +55,10 @@ export function Nav() {
           break
         }
       }
-      setActive((prev) => (prev === id ? prev : id))
-      setSection((prev) => (prev === (NAMES[id] || 'Home') ? prev : NAMES[id] || 'Home'))
+      if (id) {
+        setActive((prev) => (prev === id ? prev : id))
+        setSection((prev) => (prev === (NAMES[id] || 'Home') ? prev : NAMES[id] || 'Home'))
+      }
       raf = requestAnimationFrame(loop)
     }
     raf = requestAnimationFrame(loop)

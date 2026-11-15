@@ -1,69 +1,44 @@
-import { useLayoutEffect, useRef } from 'react'
-import { Split } from '../Split'
-import { useSectionProgress, gsap } from '../../lib/scroll'
-
-const STATS = [
-  [16, '', 'Years of practice'],
-  [240, '+', 'Residences completed'],
-  [32, '', 'Designers & craftspeople'],
-  [12, '', 'Countries'],
-]
+import { ABOUT } from '../../lib/sections'
+import { SectionHeading } from '../ui/SectionHeading'
+import { Icon } from '../ui/Icon'
 
 export function About() {
-  const ref = useRef()
-  useSectionProgress(ref, 'about')
-
-  useLayoutEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.utils.toArray('.stat strong').forEach((el) => {
-        const to = parseFloat(el.dataset.to)
-        const obj = { v: 0 }
-        gsap.to(obj, {
-          v: to,
-          duration: 2,
-          ease: 'power2.out',
-          scrollTrigger: { trigger: el, start: 'top 90%', toggleActions: 'play none none reverse' },
-          onUpdate: () => (el.textContent = Math.round(obj.v) + (el.dataset.suffix || '')),
-        })
-      })
-    }, ref)
-    return () => ctx.revert()
-  }, [])
-
   return (
-    <section id="about" ref={ref} className="section about" aria-labelledby="about-title">
-      <div className="about-grid">
-        <div className="about-copy glass">
-          <p className="kicker" data-reveal>
-            <span className="num">08</span> About the studio
-          </p>
-          <h2 id="about-title" className="h2">
-            <Split text="Architecture of feeling." data-split />
-          </h2>
-          <p data-reveal>
-            We are an interior architecture studio of designers, visualisers and makers. Every project begins in the same place
-            you just walked through: a living, photoreal 3D model of your home.
-          </p>
-          <p data-reveal>
-            It lets us test daylight at every hour, compare marble slabs in situ and choreograph how you'll move from room to room
-            — so the finished space feels inevitable, not approximate.
-          </p>
+    <section id="about" className="ui-section" aria-labelledby="about-title">
+      <div className="ui-wrap">
+        <div className="grid items-end gap-10 lg:grid-cols-[1.15fr_1fr]">
+          <SectionHeading id="about-title" kicker="About us" title="Designing Spaces That" highlight="Feel Like Home." text={ABOUT.text} />
+          <div className="grid grid-cols-3 gap-3" data-reveal>
+            {[
+              ['240+', 'Homes designed'],
+              ['16', 'Years of craft'],
+              ['100%', 'Designed in 3D first'],
+            ].map(([n, l]) => (
+              <div key={l} className="rounded-3xl bg-blush-50 p-5 text-center">
+                <strong className="block text-[clamp(1.6rem,2.6vw,2.4rem)] font-semibold tracking-[-0.04em] text-ink">{n}</strong>
+                <span className="mt-1 block text-xs text-ink-3">{l}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <ul className="stats" aria-label="Studio in numbers">
-          {STATS.map(([n, suf, label], i) => (
-            <li key={label} className="stat glass" data-speed={0.08 + i * 0.05}>
-              <strong data-to={n} data-suffix={suf}>
-                {n}
-                {suf}
-              </strong>
-              <span>{label}</span>
-            </li>
+        <p className="mt-3 text-right text-[0.7rem] text-ink-3">* Figures are placeholders — update with your studio’s numbers.</p>
+
+        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" data-stagger>
+          {ABOUT.pillars.map((p) => (
+            <article key={p.title} className="ui-card group overflow-hidden">
+              <div className="aspect-[4/3] overflow-hidden">
+                <img src={p.img} alt="" loading="lazy" className="h-full w-full object-cover transition duration-700 group-hover:scale-105" />
+              </div>
+              <div className="p-6">
+                <span className="ui-icon">
+                  <Icon name={p.icon} />
+                </span>
+                <h3 className="mt-4 text-xl font-semibold tracking-[-0.02em] text-ink">{p.title}</h3>
+                <p className="mt-2 text-[0.95rem] leading-relaxed text-ink-2">{p.text}</p>
+              </div>
+            </article>
           ))}
-        </ul>
-        <blockquote className="quote" data-speed="0.25" data-reveal>
-          “Light is the first material we design with.”
-          <cite>— Founding principal</cite>
-        </blockquote>
+        </div>
       </div>
     </section>
   )

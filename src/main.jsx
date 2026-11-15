@@ -4,6 +4,8 @@ import App from './App.jsx'
 import './styles.css'
 import './theme-v3.css'
 import './theme-v4.css'
+import './styles/tailwind.css'
+import './styles/hero.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

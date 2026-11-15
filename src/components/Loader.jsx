@@ -52,8 +52,8 @@ export function Loader({ webgl }) {
       tl.to(root.current, { autoAlpha: 0, duration: fast ? 0.3 : 0.8, ease: 'power2.out' }, '-=0.1')
       tl.to(store, { intro: 1, duration: fast ? 0.1 : 3.4, ease: 'power2.inOut' }, '-=0.6')
       tl.from('.topbar', { yPercent: -120, autoAlpha: 0, duration: 1.2, ease: 'expo.out' }, '-=3.0')
-      tl.from('.hero .wi', { yPercent: 115, rotate: 5, duration: 1.4, ease: 'expo.out', stagger: 0.06 }, '-=2.4')
-      tl.from('.hero [data-hero-fade]', { y: 30, autoAlpha: 0, duration: 1.2, ease: 'power3.out', stagger: 0.12 }, '-=1.6')
+      tl.from('.hero-tf-frame', { y: 40, autoAlpha: 0, scale: 0.97, duration: 1.4, ease: 'expo.out' }, '-=2.8')
+      tl.from('.hero-tf-intro > *', { y: 26, autoAlpha: 0, duration: 1.1, ease: 'power3.out', stagger: 0.08 }, '-=2.4')
     }
 
     return () => {
