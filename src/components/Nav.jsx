@@ -13,6 +13,7 @@ const LINKS = [
   ['Services', '#services'],
   ['About', '#about'],
   ['Process', '#process'],
+  ['Contact', '#contact'],
 ]
 
 const SECTION_TO_LINK = {
@@ -60,32 +61,43 @@ export function Nav() {
   }
 
   return (
-    <header className={`nav ${scrolled ? 'is-scrolled' : ''} ${open ? 'is-open' : ''}`}>
-      <a href="#hero" className="brand" onClick={(e) => go(e, '#hero')} aria-label={`${SITE.brand} ${SITE.brandSuffix} — home`}>
-        <img className="brand-logo" src="/logo.jpg" alt="" width="44" height="44" />
+    <header className={'nav ' + (scrolled ? 'is-scrolled ' : '') + (open ? 'is-open' : '')}>
+      <a href="#hero" className="brand pill" onClick={(e) => go(e, '#hero')} aria-label={SITE.brand + ' ' + SITE.brandSuffix + ' — home'}>
+        <img className="brand-logo" src="/logo.jpg" alt="" width="34" height="34" />
         <span className="brand-word">
           {SITE.brand}
           <em>{SITE.brandSuffix}</em>
         </span>
       </a>
-      <nav aria-label="Primary">
-        <ul className="nav-links" id="nav-links">
-          {LINKS.map(([label, href]) => (
-            <li key={href}>
-              <a href={href} onClick={(e) => go(e, href)} className={active === href ? 'is-active' : ''} aria-current={active === href ? 'true' : undefined}>
+      <div className="nav-actions">
+        <a href="#contact" className="pill pill-link" onClick={(e) => go(e, '#contact')}>
+          Connect <span aria-hidden="true">↗</span>
+        </a>
+        <button className="pill pill-menu" aria-expanded={open} aria-controls="nav-menu" onClick={() => setOpen((o) => !o)}>
+          {open ? 'Close' : 'Menu'}
+          <span className="burger" aria-hidden="true">
+            <i />
+            <i />
+          </span>
+        </button>
+      </div>
+      <nav id="nav-menu" className="menu" aria-label="Primary" aria-hidden={!open}>
+        <ol className="menu-links">
+          {LINKS.map(([label, href], i) => (
+            <li key={href} style={{ '--i': i }}>
+              <a href={href} onClick={(e) => go(e, href)} className={active === href ? 'is-active' : ''} aria-current={active === href ? 'true' : undefined} tabIndex={open ? 0 : -1}>
+                <span className="idx">{String(i + 1).padStart(2, '0')}</span>
                 {label}
               </a>
             </li>
           ))}
-        </ul>
+        </ol>
+        <div className="menu-foot">
+          <a href={SITE.phoneHref} tabIndex={open ? 0 : -1}>{SITE.phone}</a>
+          <a href={'mailto:' + SITE.email} tabIndex={open ? 0 : -1}>{SITE.email}</a>
+          <span>{SITE.address}</span>
+        </div>
       </nav>
-      <a href="#contact" className="btn btn-small nav-cta" onClick={(e) => go(e, '#contact')}>
-        Book a consultation
-      </a>
-      <button className="nav-toggle" aria-expanded={open} aria-controls="nav-links" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen((o) => !o)}>
-        <span />
-        <span />
-      </button>
     </header>
   )
 }

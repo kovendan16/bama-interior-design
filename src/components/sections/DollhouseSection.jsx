@@ -45,7 +45,7 @@ export function DollhouseSection() {
   const room = focus !== null ? DOLL_ROOMS[focus] : null
 
   return (
-    <section id="dollhouse" ref={ref} className="section dollhouse" aria-labelledby="doll-title">
+    <section id="dollhouse" ref={ref} className="section dollhouse is-dark" aria-labelledby="doll-title">
       <div className="sticky">
         <header className="doll-head" data-reveal>
           <p className="kicker">

@@ -68,13 +68,33 @@ export function Loader({ webgl }) {
   return (
     <div className="loader" ref={root} role="status" aria-live="polite" aria-label={`Loading ${pct}%`}>
       <div className="loader-inner">
-        <img className="loader-logo" src="/logo.jpg" alt={`${SITE.brand} ${SITE.brandSuffix}`} width="220" height="220" />
+        <div className="loader-grid" aria-hidden="true" />
+        <svg className="loader-orbits" viewBox="-500 -500 1000 1000" aria-hidden="true">
+          {[480, 380, 290, 210].map((r) => (
+            <circle key={r} r={r} className="ring-faint" />
+          ))}
+          <circle r="150" className="ring" />
+          <circle r="96" className="ring ring-dash" />
+          <g className="orbit orbit-a">
+            <circle cx="150" cy="0" r="6" className="dot" />
+            <path d="M0 0 L150 0 A150 150 0 0 0 106 -106 Z" className="sweep" />
+          </g>
+          <g className="orbit orbit-b">
+            <circle cx="0" cy="-96" r="3.5" className="dot dot-pink" />
+          </g>
+          <line x1="-500" y1="0" x2="500" y2="0" className="axis" />
+          <line x1="0" y1="-500" x2="0" y2="500" className="axis" />
+        </svg>
+        <img className="loader-logo" src="/logo.jpg" alt={`${SITE.brand} ${SITE.brandSuffix}`} width="84" height="84" />
+        <span className="loader-label tl">● {SITE.brand} preloader</span>
+        <span className="loader-label bl">seq 001 — est. 2026</span>
+        <div className="loader-count">
+          <span className="loader-label">loading</span>
+          <strong>{String(pct).padStart(3, '0')}</strong>
+          <em>%</em>
+        </div>
         <div className="loader-bar">
           <span style={{ transform: `scaleX(${pct / 100})` }} />
-        </div>
-        <div className="loader-meta">
-          <span>Preparing your walkthrough</span>
-          <span>{String(pct).padStart(3, '0')}%</span>
         </div>
       </div>
     </div>

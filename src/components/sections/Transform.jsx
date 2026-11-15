@@ -72,7 +72,7 @@ export function Transform() {
   }, [])
 
   return (
-    <section id="transform" ref={ref} className="section transform" aria-labelledby="transform-title">
+    <section id="transform" ref={ref} className="section transform is-dark" aria-labelledby="transform-title">
       <div className="sticky">
         <div className="tf-ambient" aria-hidden="true" />
         <header className="transform-head" data-reveal>

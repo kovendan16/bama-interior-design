@@ -42,7 +42,7 @@ export function Portfolio({ setMainPaused, device, webgl }) {
   }
 
   return (
-    <section id="portfolio" ref={ref} className="section portfolio" aria-labelledby="portfolio-title">
+    <section id="portfolio" ref={ref} className="section portfolio is-dark" aria-labelledby="portfolio-title">
       <div className="sticky">
         <div className="portfolio-stage">
           {webgl && near && (

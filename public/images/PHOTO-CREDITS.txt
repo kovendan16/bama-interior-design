@@ -5,7 +5,6 @@ Replace them with your own project photos whenever you have them; keep the
 same file names, or update the lists in src/lib/content.js.
 
 Original photo IDs (view at https://unsplash.com/photos/<id>):
-scenes/hero.jpg            1774551351897-c64cd76a7c22
 scenes/living.jpg          1541194577687-8c63bf9e7ee3
 scenes/bedroom.jpg         1617098900591-3f90928e8c54
 scenes/kitchen.jpg         1759147960461-b74a7e9a75d4

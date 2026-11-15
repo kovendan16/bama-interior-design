@@ -12,6 +12,8 @@ import { Gallery } from './components/sections/Gallery'
 import { About } from './components/sections/About'
 import { Process } from './components/sections/Process'
 import { Contact } from './components/sections/Contact'
+import { Story } from './components/sections/Story'
+import { Cta } from './components/sections/Cta'
 import { store, subscribe } from './lib/store'
 import { getDevice } from './lib/device'
 import { initSmoothScroll, ScrollTrigger, gsap } from './lib/scroll'
@@ -118,7 +120,7 @@ export default function App() {
       <PhotoBackdrop onCanvasNeeded={setCanvasNeeded} />
       <div className="vignette" aria-hidden="true" />
       <main id="main">
-        <Hero />
+        <Hero webgl={webgl} isMobile={device.isMobile} />
         <Chapter id="living" />
         <Chapter id="bedroom" />
         <Chapter id="kitchen" />
@@ -129,6 +131,8 @@ export default function App() {
         <Services />
         <About />
         <Process />
+        <Story webgl={webgl} isMobile={device.isMobile} />
+        <Cta webgl={webgl} isMobile={device.isMobile} />
         <Contact />
       </main>
     </>

@@ -133,6 +133,9 @@ const DEFS = {
   blueprint: () => new THREE.MeshBasicMaterial({ map: blueprintGrid() }),
   wire: () => new THREE.MeshBasicMaterial({ color: '#9fd3ff', wireframe: true, transparent: true, opacity: 0.55 }),
   clay: () => new THREE.MeshStandardMaterial({ color: '#e9e4dc', roughness: 0.85 }),
+  // architectural-model look for the clay scenes (hero, story, CTA)
+  clayWhite: () => new THREE.MeshStandardMaterial({ color: '#f3efee', roughness: 0.9 }),
+  clayPink: () => new THREE.MeshStandardMaterial({ color: '#f1b9c6', roughness: 0.75 }),
 }
 
 function fabric(color, sheenColor, roughness = 0.92) {
@@ -175,6 +178,7 @@ export function useMat(name) {
   if (mode) {
     // keep light sources glowing even in override modes
     if (mode === 'clay' && (name.startsWith('lamp') || name === 'ledStrip' || name.startsWith('sky'))) return getMat(name)
+    if (mode === 'clayWhite' && (name === 'glass' || name === 'glassSmoked')) return getMat(name)
     return getMat(mode)
   }
   return getMat(name)

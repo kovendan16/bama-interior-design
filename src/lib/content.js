@@ -131,7 +131,6 @@ export const CHAPTERS = {
 // The transformation section has no photos: it is the live 3D room.
 // Free photos from Unsplash (unsplash.com/license) — swap in your own project photos any time.
 export const SCENE_PHOTOS = {
-  hero: ['/images/scenes/hero.jpg'],
   living: ['/images/scenes/living.jpg'],
   bedroom: ['/images/scenes/bedroom.jpg'],
   kitchen: ['/images/scenes/kitchen.jpg'],
