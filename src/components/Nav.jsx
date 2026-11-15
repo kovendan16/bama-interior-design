@@ -61,9 +61,7 @@ export function Nav() {
   return (
     <header className={`nav ${scrolled ? 'is-scrolled' : ''} ${open ? 'is-open' : ''}`}>
       <a href="#hero" className="brand" onClick={(e) => go(e, '#hero')} aria-label={`${SITE.brand} ${SITE.brandSuffix} — home`}>
-        <svg viewBox="0 0 64 64" width="28" height="28" aria-hidden="true">
-          <path d="M14 48 32 14l18 34M21 36h22" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <img src="/logo.jpg" alt="" width="40" height="40" />
         <span>
           {SITE.brand}
           <em>{SITE.brandSuffix}</em>

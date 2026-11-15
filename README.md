@@ -1,4 +1,4 @@
-# Ardene Studio — Immersive 3D Interior Design Website
+# Bama Interior Design — Immersive 3D Interior Design Website
 
 A scroll-driven 3D walkthrough of a luxury home, built with React + Vite, Three.js,
 React Three Fiber, Drei, GSAP + ScrollTrigger and Lenis smooth scrolling.

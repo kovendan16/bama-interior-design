@@ -99,8 +99,8 @@ export function Dollhouse() {
   return (
     <group position={DOLL.pos}>
       {/* plinth */}
-      <Cyl rt={3.2} rb={3.3} h={0.9} p={[0, -0.47, 0]} m="wallDark" seg={64} />
-      <Cyl rt={3.22} h={0.02} p={[0, -0.01, 0]} m="brass" seg={64} />
+      <Cyl rt={3.2} rb={3.3} h={0.9} p={[0, -0.47, 0]} m="wallWhite" seg={64} />
+      <Cyl rt={3.22} h={0.02} p={[0, -0.01, 0]} m="marbleWhite" seg={64} />
       <group ref={house} scale={DOLL.scale}>
         <B s={[37, 0.3, 11]} p={[0, -0.15, 0]} m="wallStone" />
         <group>{ground.map(renderRoom)}</group>

@@ -68,6 +68,7 @@ export function Loader({ webgl }) {
   return (
     <div className="loader" ref={root} role="status" aria-live="polite" aria-label={`Loading ${pct}%`}>
       <div className="loader-inner">
+        <img className="loader-logo" src="/logo.jpg" alt="" width="84" height="84" />
         <div className="loader-brand">
           {SITE.brand}
           <em>{SITE.brandSuffix}</em>

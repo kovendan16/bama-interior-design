@@ -109,8 +109,8 @@ export default function Experience({ paused, device }) {
         onCreated={({ gl, scene }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping
           gl.toneMappingExposure = 1.05
-          scene.background = new THREE.Color('#0d0b09')
-          scene.fog = new THREE.Fog('#0d0b09', 22, 48)
+          scene.background = new THREE.Color('#f6efed')
+          scene.fog = new THREE.Fog('#f6efed', 22, 48)
         }}
       >
         <PerformanceMonitor onDecline={() => setDpr((d) => Math.max(0.85, d - 0.25))} onIncline={() => setDpr((d) => Math.min(device.isMobile ? 1.4 : 1.75, d + 0.15))} />
