@@ -9,6 +9,7 @@ const LINKS = [
   ['Transform', '#transform'],
   ['Dollhouse', '#dollhouse'],
   ['Portfolio', '#portfolio'],
+  ['Gallery', '#gallery'],
   ['Services', '#services'],
   ['About', '#about'],
   ['Process', '#process'],
@@ -36,7 +37,7 @@ export function Nav() {
   useEffect(() => {
     let raf
     const loop = () => {
-      const a = SECTION_TO_LINK[store.active] || '#hero'
+      const a = store.galleryInView ? '#gallery' : SECTION_TO_LINK[store.active] || '#hero'
       setActive((prev) => (prev === a ? prev : a))
       const s = window.scrollY > 40
       setScrolled((prev) => (prev === s ? prev : s))
@@ -61,10 +62,8 @@ export function Nav() {
   return (
     <header className={`nav ${scrolled ? 'is-scrolled' : ''} ${open ? 'is-open' : ''}`}>
       <a href="#hero" className="brand" onClick={(e) => go(e, '#hero')} aria-label={`${SITE.brand} ${SITE.brandSuffix} — home`}>
-        <svg viewBox="0 0 64 64" width="28" height="28" aria-hidden="true">
-          <path d="M14 48 32 14l18 34M21 36h22" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <span>
+        <img className="brand-logo" src="/logo.jpg" alt="" width="44" height="44" />
+        <span className="brand-word">
           {SITE.brand}
           <em>{SITE.brandSuffix}</em>
         </span>

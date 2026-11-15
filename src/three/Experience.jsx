@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { PerformanceMonitor, AdaptiveEvents } from '@react-three/drei'
+import { EffectComposer, N8AO, Bloom, ToneMapping } from '@react-three/postprocessing'
+import { ToneMappingMode } from 'postprocessing'
 import * as THREE from 'three'
 import { CameraRig } from './CameraRig'
 import { Lights } from './Lights'
@@ -109,8 +111,8 @@ export default function Experience({ paused, device }) {
         onCreated={({ gl, scene }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping
           gl.toneMappingExposure = 1.05
-          scene.background = new THREE.Color('#0d0b09')
-          scene.fog = new THREE.Fog('#0d0b09', 22, 48)
+          scene.background = new THREE.Color('#100c0e')
+          scene.fog = new THREE.Fog('#100c0e', 22, 48)
         }}
       >
         <PerformanceMonitor onDecline={() => setDpr((d) => Math.max(0.85, d - 0.25))} onIncline={() => setDpr((d) => Math.min(device.isMobile ? 1.4 : 1.75, d + 0.15))} />
@@ -119,6 +121,14 @@ export default function Experience({ paused, device }) {
         <World />
         <CameraRig />
         <Precompile onReady={() => setReady(true)} />
+        {!device.isMobile && (
+          // photographic finish: ambient occlusion grounds every object, lamps bloom softly
+          <EffectComposer multisampling={0} disableNormalPass>
+            <N8AO halfRes aoRadius={0.55} intensity={2.4} distanceFalloff={0.7} quality="medium" />
+            <Bloom mipmapBlur luminanceThreshold={1} intensity={0.35} />
+            <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
+          </EffectComposer>
+        )}
       </Canvas>
     </div>
   )

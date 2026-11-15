@@ -1,10 +1,8 @@
 import { useRef, useState } from 'react'
 import { Split } from '../Split'
-import { PROCESS } from '../../lib/content'
+import { PROCESS, PROCESS_AT as AT } from '../../lib/content'
 import { useSectionProgress } from '../../lib/scroll'
 
-// thresholds match the 3D stage in ProcessRoom
-const AT = [0, 0.18, 0.42, 0.76]
 
 export function Process() {
   const ref = useRef()

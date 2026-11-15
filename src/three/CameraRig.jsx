@@ -43,7 +43,11 @@ export function CameraRig() {
     } else if (active === 'dollhouse') {
       // arrive quickly, then orbit slowly while the visitor explores
       e = p < 0.3 ? easeInOutCubic(p / 0.3) * (2 / 3) : 2 / 3 + ((p - 0.3) / 0.7) * (1 / 3)
-    } else if (active === 'transform' || active === 'process') e = p
+    } else if (active === 'transform') {
+      // arrive while the section scrolls in, then hold the composed shot (slow push-in)
+      const pin = store.transformPin || 0.1
+      e = p < pin ? 0.5 * easeInOutCubic(p / pin) : 0.5 + 0.5 * ((p - pin) / (1 - pin))
+    } else if (active === 'process') e = p
     else e = easeInOutCubic(p)
     path.pos.getPoint(Math.min(1, Math.max(0, e)), pos)
     path.look.getPoint(Math.min(1, Math.max(0, e)), look)
@@ -80,7 +84,8 @@ export function CameraRig() {
       pos.y += Math.sin(clock.elapsedTime * 0.5) * 0.015
     }
 
-    const cut = last.current.first || (last.current.active !== active && (CUT_SECTIONS.has(active) || CUT_SECTIONS.has(last.current.active)))
+    const far = camera.position.distanceToSquared(pos) > 64
+    const cut = far || last.current.first || (last.current.active !== active && (CUT_SECTIONS.has(active) || CUT_SECTIONS.has(last.current.active)))
     if (cut) {
       camera.position.copy(pos)
       curLook.current.copy(look)

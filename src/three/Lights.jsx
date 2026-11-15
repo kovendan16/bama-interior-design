@@ -1,9 +1,15 @@
 import { useRef, useMemo } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
-import { Environment, Lightformer } from '@react-three/drei'
+import { Environment } from '@react-three/drei'
 import { ZONES, PRACTICALS } from './world'
 import { store, damp, range } from '../lib/store'
+import { TF } from './transformTimeline'
+
+const SUN_DEFAULT = new THREE.Color('#ffe6c4')
+const SUN_COOL = new THREE.Color('#e9efff')
+const SUN_GOLD = new THREE.Color('#ffc98e')
+const PRACTICAL_COOL = new THREE.Color('#e4ebf7')
 
 /**
  * Fixed lighting rig: one shadow-casting sun, one hemisphere fill, two warm
@@ -22,6 +28,7 @@ export function Lights({ shadowSize = 2048 }) {
   const tmpA = useMemo(() => new THREE.Vector3(), [])
   const tmpB = useMemo(() => new THREE.Vector3(), [])
   const colA = useMemo(() => new THREE.Color(), [])
+  const colSun = useMemo(() => new THREE.Color(), [])
 
   useFrame(({ clock }, rawDt) => {
     const dt = Math.min(rawDt, 0.05)
@@ -67,7 +74,11 @@ export function Lights({ shadowSize = 2048 }) {
     // practical lights for the zone
     const pr = PRACTICALS[best.id] || PRACTICALS.living
     let boost = 1
-    if (best.id === 'transform') boost = 0.4 + 0.6 * range(store.progress.transform || 0, 0.56, 0.7)
+    // transformation room: lights come on and warm up with the GSAP timeline;
+    // the walnut style is moodier (less daylight, stronger lamps)
+    const inTf = best.id === 'transform'
+    const luxe = inTf ? (TF.style <= 1 ? TF.style : 2 - TF.style) : 0
+    if (inTf) boost = (0.12 + 0.88 * Math.min(1, TF.lights)) * (1 + 0.55 * luxe)
     if (best.id === 'process') boost = 0.6 + 0.4 * range(store.progress.process || 0, 0.7, 0.92)
     const intro = 0.2 + 0.8 * store.intro
     ;[p1, p2].forEach((ref, i) => {
@@ -78,11 +89,17 @@ export function Lights({ shadowSize = 2048 }) {
       if (best.id === 'contact' && i === 0) flicker = 0.85 + Math.sin(t * 9) * 0.08 + Math.sin(t * 23) * 0.05
       ref.current.intensity = damp(ref.current.intensity, intensity * boost * intro * flicker, 4, dt)
       colA.set(color)
+      if (inTf) colA.lerpColors(PRACTICAL_COOL, colA, Math.min(1, TF.warmth))
       ref.current.color.lerp(colA, 1 - Math.exp(-3 * dt))
     })
-    const sunTarget = (best.id === 'contact' ? 0.6 : best.id === 'about' ? 4.2 : 3.2) * (0.3 + 0.7 * store.intro)
+    let sunTarget = (best.id === 'contact' ? 0.6 : best.id === 'about' ? 4.2 : 3.2) * (0.3 + 0.7 * store.intro)
+    if (inTf) {
+      sunTarget *= 1 - 0.5 * luxe
+      colSun.lerpColors(SUN_COOL, SUN_GOLD, Math.min(1, TF.warmth))
+    } else colSun.copy(SUN_DEFAULT)
+    sun.current.color.lerp(colSun, 1 - Math.exp(-4 * dt))
     sun.current.intensity = damp(sun.current.intensity, sunTarget, 3, dt)
-    hemi.current.intensity = damp(hemi.current.intensity, best.id === 'contact' ? 0.25 : 0.45, 3, dt)
+    hemi.current.intensity = damp(hemi.current.intensity, best.id === 'contact' ? 0.25 : 0.45 * (1 - 0.45 * luxe), 3, dt)
     tmpB.set(0, 0, 0)
   })
 
@@ -109,13 +126,8 @@ export function Lights({ shadowSize = 2048 }) {
       />
       <pointLight ref={p1} intensity={0} distance={10} decay={2} color="#ffc98a" />
       <pointLight ref={p2} intensity={0} distance={9} decay={2} color="#ffd29c" />
-      <Environment resolution={128} frames={1} environmentIntensity={0.55}>
-        <Lightformer form="rect" intensity={2.2} color="#fff1dc" position={[0, 5, -6]} scale={[10, 4, 1]} />
-        <Lightformer form="rect" intensity={1.2} color="#ffd9b0" position={[0, 8, 0]} rotation-x={Math.PI / 2} scale={[12, 12, 1]} />
-        <Lightformer form="rect" intensity={0.8} color="#c8d8ff" position={[-8, 2, 2]} rotation-y={Math.PI / 2} scale={[8, 3, 1]} />
-        <Lightformer form="ring" intensity={1.5} color="#ffcf96" position={[6, 2, 4]} rotation-y={-Math.PI / 2} scale={2} />
-        <Lightformer form="rect" intensity={0.4} color="#ffffff" position={[0, 1, 9]} rotation-y={Math.PI} scale={[12, 3, 1]} />
-      </Environment>
+      {/* image-based lighting captured in a real interior (Poly Haven, CC0) */}
+      <Environment files="/hdri/art_studio.hdr" environmentIntensity={0.6} />
     </>
   )
 }

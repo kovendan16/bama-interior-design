@@ -1,16 +1,18 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { Nav } from './components/Nav'
 import { Loader } from './components/Loader'
+import { PhotoBackdrop } from './components/PhotoBackdrop'
 import { Hero } from './components/sections/Hero'
 import { Chapter } from './components/sections/Chapter'
 import { Transform } from './components/sections/Transform'
 import { DollhouseSection } from './components/sections/DollhouseSection'
 import { Portfolio } from './components/sections/Portfolio'
 import { Services } from './components/sections/Services'
+import { Gallery } from './components/sections/Gallery'
 import { About } from './components/sections/About'
 import { Process } from './components/sections/Process'
 import { Contact } from './components/sections/Contact'
-import { store } from './lib/store'
+import { store, subscribe } from './lib/store'
 import { getDevice } from './lib/device'
 import { initSmoothScroll, ScrollTrigger, gsap } from './lib/scroll'
 
@@ -29,7 +31,14 @@ function hasWebGL() {
 export default function App() {
   const [device] = useState(getDevice)
   const [webgl] = useState(hasWebGL)
-  const [mainPaused, setMainPaused] = useState(false)
+  const [portfolioCovers, setMainPaused] = useState(false)
+  const [galleryCovers, setGalleryCovers] = useState(false)
+  // photos cover most sections; the live 3D canvas only runs where it is visible
+  // (it must render once at start-up so the loader can finish)
+  const [canvasNeeded, setCanvasNeeded] = useState(false)
+  const [sceneReady, setSceneReady] = useState(false)
+  useEffect(() => subscribe((t) => t === 'sceneReady' && setSceneReady(true)), [])
+  const mainPaused = portfolioCovers || galleryCovers || (sceneReady && !canvasNeeded)
 
   useLayoutEffect(() => {
     store.isMobile = device.isMobile || device.coarse
@@ -106,6 +115,7 @@ export default function App() {
       ) : (
         <div className="canvas-fallback" aria-hidden="true" />
       )}
+      <PhotoBackdrop onCanvasNeeded={setCanvasNeeded} />
       <div className="vignette" aria-hidden="true" />
       <main id="main">
         <Hero />
@@ -115,6 +125,7 @@ export default function App() {
         <Transform />
         <DollhouseSection />
         <Portfolio setMainPaused={setMainPaused} device={device} webgl={webgl} />
+        <Gallery setPaused={setGalleryCovers} />
         <Services />
         <About />
         <Process />

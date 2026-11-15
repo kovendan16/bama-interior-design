@@ -68,10 +68,7 @@ export function Loader({ webgl }) {
   return (
     <div className="loader" ref={root} role="status" aria-live="polite" aria-label={`Loading ${pct}%`}>
       <div className="loader-inner">
-        <div className="loader-brand">
-          {SITE.brand}
-          <em>{SITE.brandSuffix}</em>
-        </div>
+        <img className="loader-logo" src="/logo.jpg" alt={`${SITE.brand} ${SITE.brandSuffix}`} width="220" height="220" />
         <div className="loader-bar">
           <span style={{ transform: `scaleX(${pct / 100})` }} />
         </div>

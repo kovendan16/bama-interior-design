@@ -125,3 +125,46 @@ export const CHAPTERS = {
     side: 'left',
   },
 }
+
+// Full-screen background photos for each section (files in public/images/scenes/).
+// Multi-photo sections switch photo per step: services (4), process (4).
+// The transformation section has no photos: it is the live 3D room.
+// Free photos from Unsplash (unsplash.com/license) — swap in your own project photos any time.
+export const SCENE_PHOTOS = {
+  hero: ['/images/scenes/hero.jpg'],
+  living: ['/images/scenes/living.jpg'],
+  bedroom: ['/images/scenes/bedroom.jpg'],
+  kitchen: ['/images/scenes/kitchen.jpg'],
+  services: [
+    '/images/scenes/s1-furniture.jpg',
+    '/images/scenes/s2-lighting.jpg',
+    '/images/scenes/s3-ceilings.jpg',
+    '/images/scenes/s4-walls.jpg',
+  ],
+  about: ['/images/scenes/about.jpg'],
+  process: [
+    '/images/scenes/p1-planning.jpg',
+    '/images/scenes/p2-design.jpg',
+    '/images/scenes/p3-materials.jpg',
+    '/images/scenes/p4-execution.jpg',
+  ],
+  contact: ['/images/scenes/contact.jpg'],
+}
+
+// scroll thresholds of the four process steps
+export const PROCESS_AT = [0, 0.18, 0.42, 0.76]
+
+// Project photo gallery (files in public/images/gallery/). Add, remove or reorder freely.
+// A tile whose file is missing shows a blush placeholder until you add the photo.
+export const GALLERY = [
+  { src: '/images/gallery/living-1.jpg', title: 'Marble fireplace lounge', category: 'Living' },
+  { src: '/images/gallery/bedroom-1.jpg', title: 'City-view master suite', category: 'Bedroom' },
+  { src: '/images/gallery/kitchen-1.jpg', title: 'Marble island kitchen', category: 'Kitchen' },
+  { src: '/images/gallery/bathroom-1.jpg', title: 'Stone & walnut bath', category: 'Bathroom' },
+  { src: '/images/gallery/living-2.jpg', title: 'Soft neutral living room', category: 'Living' },
+  { src: '/images/gallery/office-1.jpg', title: 'Library home office', category: 'Office' },
+  { src: '/images/gallery/dining-1.jpg', title: 'Garden dining room', category: 'Dining' },
+  { src: '/images/gallery/bedroom-2.jpg', title: 'Forest green bedroom', category: 'Bedroom' },
+  { src: '/images/gallery/kitchen-2.jpg', title: 'Noir kitchen', category: 'Kitchen' },
+  { src: '/images/gallery/bathroom-2.jpg', title: 'Warm oak spa bath', category: 'Bathroom' },
+]

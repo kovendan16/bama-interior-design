@@ -38,17 +38,14 @@ const kitchen = [
   k([28.5, 1.6, 2.6], [36, 1.5, 2.6]),
 ]
 
-const transform = [
-  kitchen[4],
-  k([32.6, 1.9, 3.6], [36.4, 1.1, -1.6]),
-  k([34.2, 2.1, 5.0], [36.4, 1.0, -2.0]),
-  k([37.8, 2.1, 5.0], [35.6, 1.0, -2.0]),
-  k([36, 2.3, 6.0], [36, 1.15, -1.8]),
-  k([36, 2.9, 10.5], [36, 1.4, -1.0]),
-]
+// Progressive transformation: arrive, then hold ONE composed shot of the room
+// while it is designed around the visitor (only a slow push-in).
+// [arrival, locked shot, end of push-in]; CameraRig maps progress onto it.
+export const TRANSFORM_SHOT = k([36, 2.0, 4.7], [36, 1.78, -2.4])
+const transform = [kitchen[4], TRANSFORM_SHOT, k([36, 1.95, 3.95], [36, 1.72, -2.4])]
 
 const dollhouse = [
-  transform[5],
+  transform[2],
   k([37.2, 3.0, 14.0], [44, 1.6, 18]),
   k([36, 2.5, 20.6], [D[0], 1.45, D[2]]),
   k([34.6, 2.3, 21.4], [D[0], 1.4, D[2]]),

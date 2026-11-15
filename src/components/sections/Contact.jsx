@@ -166,8 +166,11 @@ export function Contact() {
 
       <footer className="footer">
         <div className="footer-brand">
-          {SITE.brand}
-          <em>{SITE.brandSuffix}</em>
+          <img className="brand-logo" src="/logo.jpg" alt="" width="52" height="52" />
+          <span className="brand-word">
+            {SITE.brand}
+            <em>{SITE.brandSuffix}</em>
+          </span>
         </div>
         <nav aria-label="Footer">
           {[
