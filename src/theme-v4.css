@@ -83,6 +83,25 @@
   font-size: clamp(2.2rem, 4.2vw, 4rem); font-weight: 600; line-height: 0.95; letter-spacing: -0.045em; color: #151214;
 }
 .story-title span { color: #d4849a; }
+/* 3D scene fades in once it has rendered real frames — never a blank pop-in */
+.story-stage > div:not(.story-loading) { opacity: 0; transition: opacity 0.7s ease; }
+.story-stage.is-ready > div:not(.story-loading) { opacity: 1; }
+/* slow-connection fallback: three soft dots, only shown if loading takes a while */
+.story-loading {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; gap: 8px; pointer-events: none;
+  opacity: 0; animation: story-loading-in 0.4s ease 0.5s forwards; transition: opacity 0.4s ease;
+}
+.story-stage.is-ready .story-loading { animation: none; opacity: 0; }
+.story-loading span { width: 8px; height: 8px; border-radius: 50%; background: #d4849a; animation: story-dot 1.1s ease-in-out infinite; }
+.story-loading span:nth-child(2) { animation-delay: 0.15s; }
+.story-loading span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes story-loading-in { to { opacity: 1; } }
+@keyframes story-dot { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .story-loading span { animation: none; opacity: 0.6; }
+  .story-stage > div:not(.story-loading) { transition: none; }
+}
 .swatch-list {
   position: absolute; z-index: 2; right: var(--gutter); top: 136px;
   list-style: none; margin: 0; padding: 14px 16px; display: grid; gap: 9px;

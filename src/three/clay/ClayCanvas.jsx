@@ -150,8 +150,20 @@ const WHITE_TEX = (() => {
   return t
 })()
 
+// Web-sized copies (≈380 KB total vs ≈4.8 MB originals). The small model room
+// never shows a texel closer than these resolve; the full-size originals stay
+// for the hero and house-tour rooms, which are seen up close.
+const MOODBOARD_TEX = ['/textures/web/parquet_1k.jpg', '/textures/web/plaster_1k.jpg', '/textures/web/linen_nor_512.jpg']
+const LOGO_TEX = '/logo.jpg'
+
+/** Warm the texture cache so the scene renders instantly when it mounts. */
+export function preloadMoodboard() {
+  useTexture.preload(MOODBOARD_TEX)
+  useTexture.preload(LOGO_TEX)
+}
+
 function useMoodboardMaterials() {
-  const [parquet, plaster, linenN] = useTexture(['/textures/herringbone_parquet/diff.jpg', '/textures/plastered_wall_02/diff.jpg', '/textures/rough_linen/nor.jpg'])
+  const [parquet, plaster, linenN] = useTexture(MOODBOARD_TEX)
   return useMemo(() => {
     const rep = (src, x, y) => {
       const t = src.clone()
@@ -267,7 +279,7 @@ function Swatch({ i, step, mat, board, room, arc }) {
 }
 
 function Moodboard({ m, boardRef, place }) {
-  const logoTex = useTexture('/logo.jpg')
+  const logoTex = useTexture(LOGO_TEX)
   const logo = useRef()
   const logoMat = useMemo(() => {
     logoTex.colorSpace = THREE.SRGBColorSpace
@@ -655,7 +667,20 @@ function CameraSetup({ look, base, narrowBack = 1, tall }) {
   return null
 }
 
-export default function ClayCanvas({ scene = 'hero', isMobile = false, paused = false }) {
+/** Calls `onReady` once the scene has drawn a couple of real frames (textures
+ *  uploaded, shaders compiled), so the page can fade the canvas in cleanly. */
+function ReadySignal({ onReady }) {
+  const frames = useRef(0)
+  const done = useRef(false)
+  useFrame(() => {
+    if (done.current || ++frames.current < 3) return
+    done.current = true
+    onReady?.()
+  })
+  return null
+}
+
+export default function ClayCanvas({ scene = 'hero', isMobile = false, paused = false, onReady }) {
   const s = SETUPS[scene]
   return (
     <Canvas
@@ -675,6 +700,7 @@ export default function ClayCanvas({ scene = 'hero', isMobile = false, paused = 
       {s.lights && <ClayLights />}
       <Suspense fallback={null}>
         <s.Scene />
+        {onReady && <ReadySignal onReady={onReady} />}
       </Suspense>
     </Canvas>
   )

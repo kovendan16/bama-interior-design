@@ -1,8 +1,39 @@
-import { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ScrollTrigger } from '../../lib/scroll'
 import { clay, MOODBOARD_STEPS, MOODBOARD_LOGO } from '../../three/clay/state'
+import { subscribe } from '../../lib/store'
 
-const ClayCanvas = lazy(() => import('../../three/clay/ClayCanvas.jsx'))
+const loadClay = () => import('../../three/clay/ClayCanvas.jsx')
+const ClayCanvas = lazy(loadClay)
+
+// Once the hero has finished loading (so the first screen never waits on us),
+// fetch this scene's 3D code + textures in the background — it's ready before
+// the visitor scrolls down to it.
+function usePreloadMoodboard(enabled) {
+  useEffect(() => {
+    if (!enabled) return
+    let cancelled = false
+    let started = false
+    let delay
+    const run = () => {
+      if (cancelled) return
+      loadClay().then((mod) => !cancelled && mod.preloadMoodboard()).catch(() => {})
+    }
+    const start = () => {
+      if (started) return
+      started = true
+      delay = window.setTimeout(run, 1200) // let the hero intro animation breathe
+    }
+    const unsub = subscribe((type) => type === 'sceneReady' && start())
+    const safety = window.setTimeout(start, 15000) // same safety net as the Loader
+    return () => {
+      cancelled = true
+      unsub()
+      window.clearTimeout(delay)
+      window.clearTimeout(safety)
+    }
+  }, [enabled])
+}
 
 /**
  * "From moodboard to room" — material swatches lift off a designer's pin-board,
@@ -15,6 +46,13 @@ export function Story({ webgl = true, isMobile = false }) {
   const [near, setNear] = useState(false)
   const [inView, setInView] = useState(false)
   const [step, setStep] = useState(-1)
+  const [ready, setReady] = useState(false)
+  const onReady = useCallback(() => setReady(true), [])
+  usePreloadMoodboard(webgl)
+  // the canvas unmounts when far away; fade it in again on its next mount
+  useEffect(() => {
+    if (!near) setReady(false)
+  }, [near])
 
   useLayoutEffect(() => {
     const st = ScrollTrigger.create({
@@ -34,7 +72,7 @@ export function Story({ webgl = true, isMobile = false }) {
     })
     const mount = ScrollTrigger.create({
       trigger: ref.current,
-      start: 'top 200%',
+      start: 'top 300%',
       end: 'bottom -100%',
       onToggle: (self) => setNear(self.isActive),
     })
@@ -48,11 +86,18 @@ export function Story({ webgl = true, isMobile = false }) {
   return (
     <section id="story" ref={ref} className="section story" aria-labelledby="story-title">
       <div className="sticky">
-        <div className="story-stage" aria-hidden="true">
+        <div className={`story-stage${ready ? ' is-ready' : ''}`} aria-hidden="true">
           {webgl && near && (
             <Suspense fallback={null}>
-              <ClayCanvas scene="moodboard" isMobile={isMobile} paused={!inView && !near} />
+              <ClayCanvas scene="moodboard" isMobile={isMobile} paused={!inView && !near} onReady={onReady} />
             </Suspense>
+          )}
+          {webgl && (
+            <div className="story-loading">
+              <span />
+              <span />
+              <span />
+            </div>
           )}
         </div>
         <header className="story-head">
