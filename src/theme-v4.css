@@ -157,5 +157,21 @@
   .topbar-progress { opacity: 1; top: 84px; }
   .hero-top { top: 108px; }
   .story-head { top: 100px; }
-  .swatch-list { display: none; }
+  .story-title { font-size: clamp(2rem, 9vw, 2.6rem); }
+  /* materials become a compact chip row above the caption: dots for every step,
+     the label only for the one being placed */
+  .swatch-list {
+    top: auto; right: auto; left: var(--gutter); bottom: 104px;
+    display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+    border-radius: 999px; font-size: 0.74rem;
+  }
+  .swatch-list li { gap: 6px; padding: 3px; border-radius: 999px; transition: background 0.35s, padding 0.35s; }
+  .swatch-list li .lbl { display: none; }
+  .swatch-list li.is-active { padding: 3px 10px 3px 4px; background: #fff; }
+  .swatch-list li.is-active .lbl { display: inline; white-space: nowrap; }
+  .swatch-list li .sw { width: 14px; height: 14px; border-radius: 50%; opacity: 0.4; transition: opacity 0.35s, transform 0.35s; }
+  .swatch-list li.is-done .sw, .swatch-list li.is-active .sw { opacity: 1; }
+  .swatch-list li.is-active .sw { transform: none; }
+  .story .story-caption { bottom: 26px; }
+  .story .story-caption .txt { font-size: 0.95rem; }
 }

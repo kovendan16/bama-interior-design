@@ -209,7 +209,19 @@ const TARGETS = {
 }
 const PRESS = 0.86 // fraction of a step window when the swatch lands
 
-function Swatch({ i, step, mat, board, room }) {
+// Portrait screens (phones): the board stacks above the room instead of beside it,
+// so both fit a tall viewport. Desktop keeps the side-by-side composition.
+const PORTRAIT_ASPECT = 0.85
+const LAYOUT = {
+  wide: { board: { p: [-3.2, 1.55, -0.8], r: [0, 0.38, 0] }, room: { p: [2.5, 0, 0.1], r: [0, -0.62, 0] }, arc: [2.4, 1.6] },
+  tall: { board: { p: [0, 3.6, -1.6], r: [0, 0, 0] }, room: { p: [0, 0, 0.8], r: [0, -0.3, 0] }, arc: [0.5, 2.2] },
+}
+const useLayout = () => {
+  const { width, height } = useThree((s) => s.size)
+  return width / height < PORTRAIT_ASPECT ? 'tall' : 'wide'
+}
+
+function Swatch({ i, step, mat, board, room, arc }) {
   const g = useRef()
   const d = useMemo(
     () => ({ s: new THREE.Vector3(), e: new THREE.Vector3(), c: new THREE.Vector3(), qs: new THREE.Quaternion(), qe: new THREE.Quaternion(), tmp: new THREE.Vector3(), ready: false }),
@@ -227,8 +239,8 @@ function Swatch({ i, step, mat, board, room }) {
       d.e.set(...TARGETS[step.key].p)
       room.current.localToWorld(d.e)
       d.c.copy(d.s).lerp(d.e, 0.5)
-      d.c.y += 2.4
-      d.c.z += 1.6
+      d.c.y += arc[0]
+      d.c.z += arc[1]
       if (TARGETS[step.key].flat) d.qe.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0))
       else d.qe.copy(camera.quaternion)
       d.ready = true
@@ -254,7 +266,7 @@ function Swatch({ i, step, mat, board, room }) {
   )
 }
 
-function Moodboard({ m, boardRef, roomRef }) {
+function Moodboard({ m, boardRef, place }) {
   const logoTex = useTexture('/logo.jpg')
   const logo = useRef()
   const logoMat = useMemo(() => {
@@ -271,7 +283,7 @@ function Moodboard({ m, boardRef, roomRef }) {
     logoMat.opacity = Math.min(1, a * 2)
   })
   return (
-    <group ref={boardRef} position={[-3.2, 1.55, -0.8]} rotation={[0, 0.38, 0]}>
+    <group ref={boardRef} position={place.p} rotation={place.r}>
       {/* linen pin-board with a thin frame */}
       <B s={[4.3, 3.0, 0.08]} m={m.board} />
       <B s={[4.42, 0.06, 0.1]} p={[0, 1.53, 0]} m={m.frame} />
@@ -295,7 +307,7 @@ function Moodboard({ m, boardRef, roomRef }) {
   )
 }
 
-function StudyRoom({ m, roomRef }) {
+function StudyRoom({ m, roomRef, place }) {
   const curtains = useRef()
   useFrame(() => {
     // curtains unfold once the linen swatch lands
@@ -306,7 +318,7 @@ function StudyRoom({ m, roomRef }) {
     }
   })
   return (
-    <group ref={roomRef} position={[2.5, 0, 0.1]} rotation={[0, -0.62, 0]} scale={0.34}>
+    <group ref={roomRef} position={place.p} rotation={place.r} scale={0.34}>
       <MaterialMode.Provider value="clayWhite">
         <Shell floor={m.floor} wall={m.walls} ceiling={false} left={{ door: false }} windows={[{ x: 0.6, w: 3.8, sill: 0.4, top: 3.2 }]} sky={m.sky} skirting={false} />
         <Sofa position={[0, 0, -3.25]} w={3} m={m.sofa} leg="clayWhite" pillows={['clayWhite', 'clayWhite', 'clayWhite']} />
@@ -332,6 +344,8 @@ function StudyRoom({ m, roomRef }) {
 
 function MoodboardScene() {
   const m = useMoodboardMaterials()
+  const layout = useLayout()
+  const L = LAYOUT[layout]
   const boardRef = useRef()
   const roomRef = useRef()
   const lampLight = useRef()
@@ -365,12 +379,13 @@ function MoodboardScene() {
   return (
     <group position={[0, -0.6, 0]}>
       <Plane s={[40, 40]} r={[-Math.PI / 2, 0, 0]} p={[0, 0, 0]} m={m.ground} receiveShadow />
-      <Moodboard m={m} boardRef={boardRef} roomRef={roomRef} />
-      <StudyRoom m={m} roomRef={roomRef} />
+      <Moodboard m={m} boardRef={boardRef} place={L.board} />
+      <StudyRoom m={m} roomRef={roomRef} place={L.room} />
+      {/* keyed by layout so each swatch recomputes its flight path on rotate/resize */}
       {MOODBOARD_STEPS.map((s, i) => (
-        <Swatch key={s.key} i={i} step={s} mat={m.swatch[s.key]} board={boardRef} room={roomRef} />
+        <Swatch key={`${s.key}-${layout}`} i={i} step={s} mat={m.swatch[s.key]} board={boardRef} room={roomRef} arc={L.arc} />
       ))}
-      <pointLight ref={lampLight} position={[1.0, 1.0, 1.4]} intensity={0} distance={4} color="#ffc98a" />
+      <pointLight ref={lampLight} position={layout === 'tall' ? [-0.9, 0.9, 0.2] : [1.0, 1.0, 1.4]} intensity={0} distance={4} color="#ffc98a" />
     </group>
   )
 }
@@ -612,17 +627,31 @@ function CurtainScene() {
 /* ------------------------------------------------------------- canvas */
 const SETUPS = {
   hero: { cam: { position: [13, 9.5, 14], fov: 30 }, look: [0, 0.6, 0], Scene: HeroScene, lights: true, exposure: 1.08 },
-  moodboard: { cam: { position: [0.4, 3.4, 10.5], fov: 34 }, look: [0, 0.75, 0], Scene: MoodboardScene, lights: true, exposure: 1.05 },
+  moodboard: {
+    cam: { position: [0.4, 3.4, 10.5], fov: 34 }, look: [0, 0.75, 0], Scene: MoodboardScene, lights: true, exposure: 1.05,
+    // portrait: frame the stacked board + room, pulled back until both fit the width
+    tall: { dir: [0.08, 0.34, 1], look: [0, 2.3, 0], fitW: 6.3, fitH: 9.6 },
+  },
   curtain: { cam: { position: [0, 1.55, 7], fov: 42 }, look: [0, 1.35, 0], Scene: CurtainScene, lights: false, exposure: 1.0, bg: '#2a1d1c' },
 }
 
-function CameraSetup({ look, base, narrowBack = 1 }) {
+function CameraSetup({ look, base, narrowBack = 1, tall }) {
   const { camera, size } = useThree()
   useEffect(() => {
-    camera.position.set(...base).multiplyScalar(size.width / size.height < 1 ? narrowBack : 1)
-    camera.lookAt(...look)
+    const aspect = size.width / size.height
+    if (tall && aspect < PORTRAIT_ASPECT) {
+      // distance that fits `fitW` across and `fitH` top-to-bottom at this aspect
+      const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+      const dist = Math.max(tall.fitW / 2 / (t * aspect), tall.fitH / 2 / t)
+      const dir = new THREE.Vector3(...tall.dir).normalize()
+      camera.position.set(...tall.look).addScaledVector(dir, dist)
+      camera.lookAt(...tall.look)
+    } else {
+      camera.position.set(...base).multiplyScalar(aspect < 1 ? narrowBack : 1)
+      camera.lookAt(...look)
+    }
     camera.updateProjectionMatrix()
-  }, [camera, look, base, size.width, size.height, narrowBack])
+  }, [camera, look, base, size.width, size.height, narrowBack, tall])
   return null
 }
 
@@ -642,7 +671,7 @@ export default function ClayCanvas({ scene = 'hero', isMobile = false, paused = 
         if (s.bg) sc.background = new THREE.Color(s.bg)
       }}
     >
-      <CameraSetup look={s.look} base={s.cam.position} narrowBack={scene === 'moodboard' ? 1.45 : 1} />
+      <CameraSetup look={s.look} base={s.cam.position} narrowBack={scene === 'moodboard' ? 1.45 : 1} tall={s.tall} />
       {s.lights && <ClayLights />}
       <Suspense fallback={null}>
         <s.Scene />

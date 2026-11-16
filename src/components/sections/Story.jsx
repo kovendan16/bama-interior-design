@@ -67,7 +67,7 @@ export function Story({ webgl = true, isMobile = false }) {
           {MOODBOARD_STEPS.map((s, i) => (
             <li key={s.key} className={i === step ? 'is-active' : i < step ? 'is-done' : ''}>
               <span className="sw" data-k={s.key} aria-hidden="true" />
-              {s.swatch}
+              <span className="lbl">{s.swatch}</span>
             </li>
           ))}
         </ol>
