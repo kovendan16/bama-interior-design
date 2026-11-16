@@ -29,8 +29,8 @@ const INFO = {
   bathroom: {
     label: 'Bathroom',
     title: 'Spa Bathroom',
-    text: 'A freestanding tub beneath the window, green zellige tiles and twin mirrors lit by brass sconces.',
-    materials: ['Marble floor', 'Green zellige', 'Travertine', 'Brushed brass'],
+    text: 'Warm beige marble, an arched LED mirror over a floating oak vanity and a glass walk-in shower in stacked travertine.',
+    materials: ['Beige marble', 'Travertine', 'Oak', 'Brushed brass'],
   },
   office: {
     label: 'Office',

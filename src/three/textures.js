@@ -719,3 +719,38 @@ export function carpetTiles() {
     return finish(c, { aniso: 8 })
   })
 }
+
+// --- bathroom: stacked travertine strips (shower wall) -----------------
+/** Thin horizontal travertine strips of varied length and tone. Texture = 1.2 m square. */
+export function stackedStone() {
+  return memo('stacked-stone', () => {
+    const S = 1024
+    const [c, ctx] = makeCanvas(S, S)
+    const r = rng(19)
+    const tones = ['#e6d6bf', '#dccaae', '#eadcc7', '#d6c2a4', '#e1d0b6', '#efe3d0']
+    let y = 0
+    while (y < S) {
+      const h = 34 + Math.floor(r() * 30)
+      let x = -Math.floor(r() * 200)
+      while (x < S) {
+        const w = 160 + Math.floor(r() * 320)
+        ctx.fillStyle = tones[Math.floor(r() * tones.length)]
+        ctx.fillRect(x, y, w, h)
+        // travertine pits and veins
+        for (let i = 0; i < 14; i++) {
+          ctx.fillStyle = `rgba(150,120,85,${0.06 + r() * 0.1})`
+          ctx.fillRect(x + r() * w, y + r() * h, 2 + r() * 14, 1 + r() * 2)
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.12)'
+        ctx.fillRect(x, y, w, 2)
+        ctx.fillStyle = 'rgba(120,95,65,0.45)'
+        ctx.fillRect(x + w - 2, y, 2, h)
+        x += w
+      }
+      ctx.fillStyle = 'rgba(110,85,60,0.5)'
+      ctx.fillRect(0, y + h - 2, S, 2)
+      y += h
+    }
+    return finish(c, { aniso: 8 })
+  })
+}

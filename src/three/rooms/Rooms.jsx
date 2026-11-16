@@ -2,9 +2,26 @@ import { useRef } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { Shell } from './Shell'
-import { B, Cyl, Plane } from '../furniture/primitives'
-import { BubbleBed, WalnutNightstand, BeadedLamp, PelmetCurtains, TaskChair, BenchDesk, PlanterDivider, LightGrid, SnakePlanter, WoodBlind } from '../furniture/modern-rooms'
-import { chinoiserieMural, stripeFabric, carpetTiles } from '../textures'
+import { B, Cyl, Plane, RB as RBx } from '../furniture/primitives'
+import {
+  BubbleBed,
+  WalnutNightstand,
+  BeadedLamp,
+  PelmetCurtains,
+  TaskChair,
+  BenchDesk,
+  PlanterDivider,
+  LightGrid,
+  SnakePlanter,
+  WoodBlind,
+  ArchMirror,
+  FloatingVanity,
+  WallToilet,
+  WalkInShower,
+  ArchNiche,
+  CoveTray,
+} from '../furniture/modern-rooms'
+import { chinoiserieMural, stripeFabric, carpetTiles, luxeMarbleTiles, stackedStone, marble } from '../textures'
 import {
   Sofa,
   Armchair,
@@ -194,33 +211,100 @@ export function Kitchen({ shell = {} }) {
   )
 }
 
-/* =============================== BATHROOM =============================== */
+/* =============================== BATHROOM ===============================
+ * Warm-beige spa bathroom: polished marble floor and panels, an arched mirror
+ * with an LED halo over a floating oak vanity, a wall-hung WC on a stone ledge,
+ * a glass walk-in shower with a stacked-travertine wall and brass fittings, a
+ * lit arched niche, cove-lit ceiling and a soft beige rug. */
+let bathMats
+function getBathMats() {
+  if (bathMats) return bathMats
+  const floorTex = luxeMarbleTiles().clone()
+  floorTex.repeat.set(12 / 2.4, 10 / 2.4)
+  floorTex.needsUpdate = true
+  const panelTex = marble('white').clone()
+  panelTex.repeat.set(1.5, 1.5)
+  panelTex.needsUpdate = true
+  const stone = stackedStone().clone()
+  stone.repeat.set(2.7 / 1.2, 2.75 / 1.2)
+  stone.needsUpdate = true
+  bathMats = {
+    wall: new THREE.MeshStandardMaterial({ color: '#ecdfcb', roughness: 0.55 }),
+    floor: new THREE.MeshPhysicalMaterial({ map: floorTex, color: '#fff7ec', roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 }),
+    panel: new THREE.MeshPhysicalMaterial({ map: panelTex, color: '#f1e5d2', roughness: 0.25, clearcoat: 0.6 }),
+    stone: new THREE.MeshStandardMaterial({ map: stone, roughness: 0.7 }),
+    oak: getMat('oak'),
+    top: new THREE.MeshStandardMaterial({ color: '#efe6d8', roughness: 0.3 }),
+    ceramic: getMat('ceramicWhite'),
+    brass: new THREE.MeshStandardMaterial({ color: '#cfa660', metalness: 1, roughness: 0.28 }),
+    // soft, warm reflection (a full chrome mirror picks up the dark studio HDRI)
+    mirror: new THREE.MeshPhysicalMaterial({ color: '#eee7dc', metalness: 0.25, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.03 }),
+    halo: new THREE.MeshBasicMaterial({ color: new THREE.Color('#ffd9a0').multiplyScalar(1.5), toneMapped: false }),
+    glow: new THREE.MeshBasicMaterial({ color: '#ffcf96', transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }),
+    led: new THREE.MeshBasicMaterial({ color: new THREE.Color('#ffe2b8').multiplyScalar(1.4), toneMapped: false }),
+    glass: getMat('glass'),
+    tray: new THREE.MeshStandardMaterial({ color: '#e8ddcc', roughness: 0.4 }),
+    bottle: new THREE.MeshStandardMaterial({ color: '#8a6438', roughness: 0.25, metalness: 0.1 }),
+    ceil: new THREE.MeshStandardMaterial({ color: '#f6f0e6', roughness: 0.9 }),
+    rug: new THREE.MeshStandardMaterial({ color: '#cdbba0', roughness: 1, normalMap: loadTex('/textures/fabric_pattern_07/nor.jpg', [6, 4]), normalScale: new THREE.Vector2(2.5, 2.5) }),
+    towel: new THREE.MeshStandardMaterial({ color: '#f7f3ec', roughness: 1 }),
+  }
+  return bathMats
+}
+
 export function Bathroom({ shell = {} }) {
+  const m = getBathMats()
   return (
     <group>
-      <Shell floor="marbleFloor" wall="wallStone" windows={[{ x: -2.2, w: 2.8, sill: 0.95, top: 3.2 }]} sky="skyDay" skirting={false} {...shell} />
-      <CoveLight />
-      <B s={[4.2, 3.2, 0.03]} p={[2.9, 1.6, -4.88]} m="tileGreen" />
-      <Bathtub position={[-2.2, 0, -3.4]} />
-      <Vanity position={[2.6, 0, -4.6]} w={2.2} />
-      <RoundMirror position={[2.05, 1.75, -4.84]} radius={0.38} />
-      <RoundMirror position={[3.15, 1.75, -4.84]} radius={0.38} />
-      <WallSconce position={[1.45, 1.8, -4.86]} />
-      <WallSconce position={[2.6, 1.8, -4.86]} />
-      <WallSconce position={[3.75, 1.8, -4.86]} />
-      <ShowerScreen position={[4.6, 0, -4.4]} />
-      <Cyl rt={0.16} h={0.02} p={[5.3, 2.4, -4.3]} m="brass" />
-      <TowelLadder position={[-5.6, 0, -1.6]} rotation={[0, Math.PI / 2, 0]} />
-      <PendantGlobe position={[-2.9, 0, -3.4]} drop={1.6} radius={0.12} />
-      <PendantGlobe position={[-1.5, 0, -3.4]} drop={1.6} radius={0.12} />
-      <LoungeChair position={[0.6, 0, -1.6]} rotation={[0, -0.4, 0]} m="linenWhite" frame="oak" />
-      <SideTable position={[-0.3, 0, -1.5]} top="travertine" base="brassBrushed" />
-      <RoundRug radius={1.1} position={[-1.5, 0, -1.4]} m="rugClassic" />
-      <Plant position={[-5.1, 0, -4.3]} height={1.5} leaves={32} seed={31} pot="ceramicWhite" kind="palm" />
-      <Plant position={[5.2, 0, -1]} height={1.2} leaves={26} seed={33} pot="stoneware" />
+      <Shell floor={m.floor} wall={m.wall} windows={[]} skirting={false} {...shell} />
+      <CoveTray ceil={m.ceil} led={m.led} />
+      {/* vanity wall: marble panel, arched LED mirror, floating oak vanity */}
+      <B s={[3.4, 3.7, 0.02]} p={[-3.3, 1.85, -4.97]} m={m.panel} />
+      <group position={[-3.3, 1.2, -4.955]}>
+        <ArchMirror w={1.0} h={1.65} mirror={m.mirror} halo={m.halo} glow={m.glow} />
+      </group>
+      <group position={[-3.3, 0, -4.96]}>
+        <FloatingVanity w={1.7} wood={m.oak} top={m.top} ceramic={m.ceramic} brass={m.brass} led={m.led} glow={m.glow} />
+      </group>
+      {/* WC on a stone ledge, backlit marble panel above */}
+      <B s={[2.0, 1.15, 0.28]} p={[-0.45, 0.575, -4.86]} m={m.panel} />
+      <B s={[2.02, 0.03, 0.3]} p={[-0.45, 1.165, -4.85]} m={m.top} />
+      <B s={[1.4, 1.6, 0.02]} p={[-0.45, 2.3, -4.97]} m={m.panel} />
+      <B s={[1.36, 0.012, 0.02]} p={[-0.45, 1.2, -4.94]} m={m.led} shadow={false} />
+      <group position={[-0.45, 0, -4.72]}>
+        <WallToilet ceramic={m.ceramic} brass={m.brass} />
+      </group>
+      {[0, 1, 2].map((i) => (
+        <RBox key={i} s={[0.34, 0.07, 0.22]} p={[0.15, 1.215 + i * 0.07, -4.84]} m={m.towel} />
+      ))}
+      <group position={[-1.0, 1.18, -4.84]} scale={0.6}>
+        <Plant height={0.8} leaves={18} seed={71} pot="ceramicWhite" />
+      </group>
+      {/* walk-in shower */}
+      <group position={[0.75, 0, -4.98]}>
+        <WalkInShower w={2.7} d={1.75} glass={m.glass} brass={m.brass} stone={m.stone} tray={m.tray} led={m.led} bottle={m.bottle} />
+      </group>
+      {/* left wall: lit arched niche and a towel ring */}
+      <group position={[-5.97, 0, -1.9]} rotation={[0, Math.PI / 2, 0]}>
+        <ArchNiche w={0.9} h={2.2} frame={m.top} back={m.panel} shelf={m.glass} Plant={Plant} bottle={m.bottle} led={m.led} />
+      </group>
+      <group position={[-5.9, 1.25, -3.8]} rotation={[0, Math.PI / 2, 0]}>
+        <Cyl rt={0.03} h={0.04} p={[0, 0.08, -0.02]} r={[Math.PI / 2, 0, 0]} m={m.brass} seg={14} />
+        <mesh material={m.brass} position={[0, -0.02, 0.02]}>
+          <torusGeometry args={[0.1, 0.008, 8, 32]} />
+        </mesh>
+        <RBox s={[0.3, 0.42, 0.04]} p={[0, -0.25, 0.03]} m={m.towel} />
+      </group>
+      {/* tall olive tree, rug */}
+      <Plant position={[4.5, 0, -4.2]} height={2.1} leaves={48} seed={73} pot="ceramicWhite" />
+      <RBox s={[2.6, 0.025, 1.6]} p={[-0.9, 0.013, -1.7]} m={m.rug} />
     </group>
   )
 }
+
+// rounded box with a soft radius (towels, rug)
+const RBox = ({ s, p, m }) => <RBx s={s} p={p} m={m} radius={Math.min(0.03, s[1] / 2 - 0.001)} />
+
 
 /* =============================== OFFICE ===============================
  * Open-plan studio: walnut benching desks with glass screens and mesh task

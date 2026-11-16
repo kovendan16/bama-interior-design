@@ -291,3 +291,158 @@ export function WoodBlind({ w, top, drop = 0.9, m }) {
     </group>
   )
 }
+
+/* ================================================================ BATHROOM */
+
+/** Arch (flat bottom, round top) outline as a THREE.Shape, centred on x, base at y=0. */
+function archShape(w, h) {
+  const r = w / 2
+  const s = new THREE.Shape()
+  s.moveTo(-r, 0)
+  s.lineTo(r, 0)
+  s.lineTo(r, h - r)
+  s.absarc(0, h - r, r, 0, Math.PI, false)
+  s.lineTo(-r, 0)
+  return s
+}
+
+/** Arched mirror with a soft LED halo behind it (faces +z, base at y=0). */
+export function ArchMirror({ w = 1.0, h = 1.7, mirror, halo, glow }) {
+  const geo = useMemo(() => new THREE.ShapeGeometry(archShape(w, h), 48), [w, h])
+  const haloGeo = useMemo(() => new THREE.ShapeGeometry(archShape(w + 0.12, h + 0.08), 48), [w, h])
+  const glowGeo = useMemo(() => new THREE.ShapeGeometry(archShape(w + 0.5, h + 0.35), 48), [w, h])
+  return (
+    <group>
+      <mesh geometry={glowGeo} material={glow} position={[0, -0.18, 0.002]} />
+      <mesh geometry={haloGeo} material={halo} position={[0, -0.04, 0.006]} />
+      <mesh geometry={geo} material={mirror} position={[0, 0, 0.03]} />
+    </group>
+  )
+}
+
+/** Wall-hung oak vanity with a vessel basin, wall tap and an LED glow underneath (faces +z). */
+export function FloatingVanity({ w = 1.7, wood, top, ceramic, brass, led, glow }) {
+  const bowl = useMemo(() => new THREE.SphereGeometry(0.22, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), [])
+  return (
+    <group>
+      <B s={[w, 0.46, 0.5]} p={[0, 0.66, 0.25]} m={wood} />
+      {/* drawer seams */}
+      {[-w / 6, w / 6].map((x) => (
+        <B key={x} s={[0.006, 0.42, 0.006]} p={[x, 0.66, 0.503]} m="walnut" shadow={false} />
+      ))}
+      <B s={[w - 0.04, 0.006, 0.006]} p={[0, 0.66, 0.503]} m="walnut" shadow={false} />
+      <B s={[w + 0.04, 0.04, 0.54]} p={[0, 0.91, 0.25]} m={top} />
+      {/* vessel basin */}
+      <mesh geometry={bowl} material={ceramic} position={[-0.05, 1.1, 0.27]} rotation={[0, 0, 0]} scale={[1, 0.62, 0.85]} castShadow />
+      {/* wall tap */}
+      <B s={[0.12, 0.06, 0.02]} p={[-0.05, 1.27, 0.01]} m={brass} />
+      <Cyl rt={0.014} h={0.2} p={[-0.05, 1.24, 0.11]} r={[Math.PI / 2, 0, 0]} m={brass} seg={10} />
+      {[-0.17, 0.07].map((x) => (
+        <Cyl key={x} rt={0.022} h={0.05} p={[x, 1.27, 0.03]} r={[Math.PI / 2, 0, 0]} m={brass} seg={14} />
+      ))}
+      {/* LED strip and the warm wash it throws on the floor */}
+      <B s={[w - 0.1, 0.012, 0.02]} p={[0, 0.425, 0.4]} m={led} shadow={false} />
+      <mesh position={[0, 0.006, 0.45]} rotation={[-Math.PI / 2, 0, 0]} material={glow}>
+        <planeGeometry args={[w + 0.4, 0.9]} />
+      </mesh>
+      {/* soap and a small vase */}
+      <Cyl rt={0.035} h={0.14} p={[0.55, 1.0, 0.3]} m={brass} seg={14} />
+      <Cyl rt={0.05} rb={0.04} h={0.16} p={[-0.6, 1.01, 0.3]} m={ceramic} seg={18} />
+    </group>
+  )
+}
+
+/** Wall-hung WC with a brass flush plate (faces +z). */
+export function WallToilet({ ceramic, brass }) {
+  return (
+    <group>
+      <RB s={[0.38, 0.32, 0.52]} p={[0, 0.42, 0.28]} m={ceramic} radius={0.12} seg={5} />
+      <RB s={[0.4, 0.04, 0.5]} p={[0, 0.6, 0.27]} m={ceramic} radius={0.02} />
+      <B s={[0.24, 0.16, 0.012]} p={[0, 1.0, 0.006]} m={brass} />
+    </group>
+  )
+}
+
+/**
+ * Walk-in shower: glass front with brass edges, stacked-stone back wall with a
+ * lit niche, rain head and a hand shower (sits against the back wall; spans
+ * x 0..w, z 0..d forward).
+ */
+export function WalkInShower({ w = 2.6, d = 1.7, h = 2.35, glass, brass, stone, tray, led, bottle }) {
+  return (
+    <group>
+      <B s={[w, 0.03, d]} p={[w / 2, 0.015, d / 2]} m={tray} />
+      <B s={[w, h + 0.4, 0.04]} p={[w / 2, (h + 0.4) / 2, 0.02]} m={stone} />
+      {/* lit niche */}
+      <B s={[w - 0.6, 0.012, 0.12]} p={[w / 2, 1.3, 0.1]} m={tray} />
+      <B s={[w - 0.62, 0.01, 0.02]} p={[w / 2, 1.62, 0.12]} m={led} shadow={false} />
+      {[0.5, 0.62, 0.78, 0.92].map((x, i) => (
+        <Cyl key={x} rt={0.03} h={0.16 + (i % 2) * 0.05} p={[x, 1.4 + (i % 2) * 0.025, 0.1]} m={bottle} seg={12} />
+      ))}
+      {/* glass: front panel with a door gap, and the side panel */}
+      <B s={[w * 0.62, h, 0.012]} p={[w * 0.31, h / 2, d]} m={glass} shadow={false} castShadow={false} />
+      <B s={[0.012, h, d]} p={[0.006, h / 2, d / 2]} m={glass} shadow={false} castShadow={false} />
+      <B s={[0.025, h, 0.025]} p={[0, h / 2, d]} m={brass} />
+      <B s={[0.025, h, 0.025]} p={[w * 0.62, h / 2, d]} m={brass} />
+      <B s={[w * 0.62, 0.025, 0.025]} p={[w * 0.31, h, d]} m={brass} />
+      <B s={[0.025, 0.025, d]} p={[0, h, d / 2]} m={brass} />
+      <B s={[0.025, 0.025, d * 0.6]} p={[w * 0.62, h, d * 0.7]} m={brass} />
+      {/* rain head + mixer + hand shower */}
+      <B s={[0.02, 0.02, 0.4]} p={[w * 0.55, 2.4, 0.22]} m={brass} />
+      <B s={[0.3, 0.02, 0.3]} p={[w * 0.55, 2.38, 0.42]} m={brass} />
+      <Cyl rt={0.013} h={1.4} p={[w * 0.8, 1.55, 0.06]} m={brass} seg={10} />
+      <Cyl rt={0.045} h={0.04} p={[w * 0.8, 1.1, 0.06]} r={[Math.PI / 2, 0, 0]} m={brass} seg={18} />
+      <Cyl rt={0.02} h={0.2} p={[w * 0.66, 1.45, 0.08]} m={brass} seg={10} />
+      <mesh position={[w * 0.7, 1.15, 0.07]} material={brass}>
+        <torusGeometry args={[0.13, 0.008, 8, 32, Math.PI * 1.4]} />
+      </mesh>
+    </group>
+  )
+}
+
+/** Arched wall niche with glass shelves, plants and bottles (faces +z). */
+export function ArchNiche({ w = 0.9, h = 2.2, frame, back, shelf, Plant, bottle, led }) {
+  const shape = useMemo(() => new THREE.ShapeGeometry(archShape(w, h), 40), [w, h])
+  return (
+    <group>
+      <mesh geometry={shape} material={back} position={[0, 0.2, 0.01]} />
+      <B s={[w + 0.16, 0.16, 0.18]} p={[0, 0.12, 0.09]} m={frame} />
+      {[0.75, 1.25, 1.75].map((y, i) => (
+        <group key={y}>
+          <B s={[w - 0.04, 0.025, 0.2]} p={[0, y, 0.1]} m={shelf} />
+          <B s={[w - 0.1, 0.008, 0.02]} p={[0, y - 0.02, 0.19]} m={led} shadow={false} />
+          {i === 1 ? (
+            <group position={[0, y + 0.012, 0.1]} scale={0.55}>
+              <Plant height={0.7} leaves={14} seed={61} pot="ceramicWhite" />
+            </group>
+          ) : (
+            [-0.22, -0.08, 0.2].map((x, j) => <Cyl key={x} rt={0.035} h={0.14 + j * 0.04} p={[x, y + 0.08 + j * 0.02, 0.1]} m={bottle} seg={12} />)
+          )}
+        </group>
+      ))}
+    </group>
+  )
+}
+
+/** Static cove-lit tray ceiling with downlights (for the cut-away rooms). */
+export function CoveTray({ X = 4.8, Z = 3.8, bw = 0.38, y = 3.7, ceil, led }) {
+  const ox = X - bw
+  const oz = Z - bw
+  const lights = []
+  for (let x = -X + 0.7; x <= X - 0.6; x += 1.3) lights.push([x, -Z + bw / 2], [x, Z - bw / 2])
+  return (
+    <group>
+      <B s={[2 * X, 0.08, bw]} p={[0, y, -Z + bw / 2]} m={ceil} />
+      <B s={[2 * X, 0.08, bw]} p={[0, y, Z - bw / 2]} m={ceil} />
+      <B s={[bw, 0.08, 2 * oz]} p={[-X + bw / 2, y, 0]} m={ceil} />
+      <B s={[bw, 0.08, 2 * oz]} p={[X - bw / 2, y, 0]} m={ceil} />
+      <B s={[2 * ox, 0.02, 0.03]} p={[0, y + 0.05, -oz - 0.03]} m={led} shadow={false} />
+      <B s={[2 * ox, 0.02, 0.03]} p={[0, y + 0.05, oz + 0.03]} m={led} shadow={false} />
+      <B s={[0.03, 0.02, 2 * oz]} p={[-ox - 0.03, y + 0.05, 0]} m={led} shadow={false} />
+      <B s={[0.03, 0.02, 2 * oz]} p={[ox + 0.03, y + 0.05, 0]} m={led} shadow={false} />
+      {lights.map(([x, z], i) => (
+        <Cyl key={i} rt={0.045} h={0.01} p={[x, y - 0.045, z]} m={led} seg={14} shadow={false} />
+      ))}
+    </group>
+  )
+}
