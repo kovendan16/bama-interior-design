@@ -4,7 +4,8 @@ import { Loader } from './components/Loader'
 import { Hero } from './components/sections/Hero'
 import { Chapter } from './components/sections/Chapter'
 import { Transform } from './components/sections/Transform'
-import { DollhouseSection } from './components/sections/DollhouseSection'
+// Dollhouse section disabled — uncomment this and <DollhouseSection /> below to restore.
+// import { DollhouseSection } from './components/sections/DollhouseSection'
 import { Portfolio } from './components/sections/Portfolio'
 import { Services } from './components/sections/Services'
 import { About } from './components/sections/About'
@@ -113,7 +114,7 @@ export default function App() {
         <Chapter id="bedroom" />
         <Chapter id="kitchen" />
         <Transform />
-        <DollhouseSection />
+        {/* <DollhouseSection /> */}
         <Portfolio setMainPaused={setMainPaused} device={device} webgl={webgl} />
         <Services />
         <About />

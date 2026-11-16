@@ -234,6 +234,7 @@ p { margin: 0 0 1rem; }
 .chapter .sticky { justify-content: center; }
 .chapter.side-right .sticky { align-items: flex-end; }
 .panel { width: min(440px, 100%); padding: 34px 34px 28px; }
+.more-toggle { display: none; } /* mobile-only "Details" button */
 .facts { display: flex; gap: 28px; margin: 1.4rem 0 0; padding-top: 1.2rem; border-top: 1px solid var(--line); }
 .facts dt { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
 .facts dd { margin: 0.2rem 0 0; font-family: var(--serif); font-size: 1.25rem; }
@@ -485,6 +486,39 @@ p { margin: 0 0 1rem; }
   .panel { width: 100%; padding: 22px 20px 18px; }
   .panel p:not(.kicker) { font-size: 0.92rem; }
 
+  /* chapters → captions: no card, a soft bottom scrim, compact by default,
+     and the whole caption fades out part-way through the section (Chapter.jsx) */
+  .chapter .sticky { opacity: var(--cap-o, 1); transition: none; }
+  .chapter.cap-hidden .sticky { pointer-events: none; }
+  .chapter .sticky::before {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 46%;
+    z-index: -1; pointer-events: none;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.7) 45%, rgba(255, 255, 255, 0) 100%);
+    transition: height 0.5s cubic-bezier(.2,.8,.2,1);
+  }
+  .chapter.is-details .sticky::before { height: 72%; }
+  .chapter .panel {
+    translate: 0 var(--cap-y, 0px);
+    background: transparent; border-color: transparent; box-shadow: none;
+    padding: 0 4px 6px;
+  }
+  .chapter .panel .h2 { font-size: clamp(1.7rem, 7.4vw, 2.1rem); margin-bottom: 0.2rem; }
+  .chapter .panel-more {
+    display: grid; grid-template-rows: 0fr; opacity: 0;
+    transition: grid-template-rows 0.5s cubic-bezier(.2,.8,.2,1), opacity 0.4s;
+  }
+  .chapter .panel-more-inner { min-height: 0; overflow: hidden; }
+  .chapter.is-details .panel-more { grid-template-rows: 1fr; opacity: 1; }
+  .chapter .panel-more p { margin: 0.4rem 0 0; color: var(--ink-2); }
+  .chapter .facts { margin-top: 0.9rem; padding-top: 0.8rem; }
+  .more-toggle {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 0.7rem;
+    min-height: 40px; padding: 0 16px; border-radius: 999px; cursor: pointer;
+    background: rgba(255, 255, 255, 0.85); border: 1px solid var(--line);
+    font: inherit; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .more-toggle span { color: var(--accent-ink); font-size: 1rem; line-height: 1; }
+
   .transform-steps { padding: 14px 16px; }
   .transform-steps ol { overflow-x: auto; justify-content: flex-start; gap: 18px; scrollbar-width: none; }
   .transform-steps ol::-webkit-scrollbar { display: none; }
@@ -515,6 +549,21 @@ p { margin: 0 0 1rem; }
   .stat { padding: 18px; }
 
   .process-panel { padding: 22px 20px; }
+
+  /* services + process → captions over a bottom scrim (they track scroll
+     progress, so they stay visible but no longer cover the room as a card) */
+  .services .sticky::before, .process .sticky::before {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 62%;
+    z-index: -1; pointer-events: none;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.93) 0%, rgba(255, 255, 255, 0.72) 50%, rgba(255, 255, 255, 0) 100%);
+  }
+  .services-panel, .process-panel { background: transparent; border-color: transparent; box-shadow: none; padding: 0 4px 6px; }
+  .service-list { margin-top: 0.6rem; }
+  .service-list button { padding: 9px 2px; }
+  .timeline-wrap { margin-top: 0.8rem; }
+  .timeline li { padding: 5px 0 5px 40px; }
+  .timeline li::before { top: 12px; }
+  .t-head h3 { font-size: 1.2rem; }
   .t-head .tag { display: none; }
   .process .sticky { justify-content: flex-end; }
 
@@ -561,4 +610,124 @@ h1 em, h2 em, h3 em, .brand em, .loader-brand em { font-style: normal; color: va
 .nav, .nav.is-scrolled {
   background: rgba(255, 255, 255, 0.82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
   box-shadow: 0 1px 0 rgba(21, 18, 20, 0.06);
+}
+
+/* ======================================================================
+   MOBILE: let the 3D scene breathe. Cards become captions (no white box),
+   with a soft scrim only where text sits. Must stay at the end of the file
+   so it wins over the "white glass" rule above. Desktop is unaffected.
+   ====================================================================== */
+@media (max-width: 680px) {
+  :root { --halo: 0 0 14px rgba(255, 255, 255, 0.95), 0 0 3px rgba(255, 255, 255, 0.9); }
+
+  /* 04 transform: heading at top fades out early (Transform.jsx), steps stay */
+  .transform-head {
+    background: transparent; border-color: transparent; box-shadow: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0 4px;
+  }
+  .transform-head > * { opacity: var(--head-o, 1); translate: 0 var(--head-y, 0px); }
+  .transform-head .h2 { font-size: clamp(1.7rem, 7.4vw, 2.1rem); }
+  .transform-head .muted { color: var(--ink-2); font-size: 0.9rem; margin: 0.3rem 0 0; }
+  .transform .sticky::before {
+    content: ''; position: absolute; left: 0; right: 0; top: 0; height: 44%;
+    z-index: -1; pointer-events: none; opacity: var(--head-o, 1);
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.65) 55%, rgba(255, 255, 255, 0) 100%);
+  }
+  .transform .sticky::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 18%;
+    z-index: -1; pointer-events: none;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0));
+  }
+  .transform-steps { background: transparent; border-color: transparent; box-shadow: none; padding: 10px 4px 0; }
+  .transform-steps li { text-shadow: var(--halo); }
+
+  /* 06 portfolio: heading + project info as captions over the stage fades */
+  .portfolio-stage::after {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 20%, rgba(255, 255, 255, 0) 56%, rgba(255, 255, 255, 0.92) 100%);
+  }
+  .portfolio-head {
+    background: transparent; border-color: transparent; box-shadow: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0;
+  }
+  .portfolio-head .h2 { font-size: 1.6rem; }
+  .project-card {
+    background: transparent; border-color: transparent; box-shadow: none; padding: 0 4px;
+    bottom: 136px;
+  }
+  .project-card .h3 { margin: 0.2rem 0 0; font-size: 1.35rem; }
+  .project-card .facts { display: none; }
+
+  /* 07 services: compact caption + horizontal chip row */
+  .services .sticky::before { height: 34%; }
+  .services-panel .h2 { font-size: 1.6rem; }
+  .service-list {
+    position: relative; display: flex; gap: 8px; border-top: 0;
+    margin: 0.8rem -20px 0; padding: 2px 20px 4px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .service-list::-webkit-scrollbar { display: none; }
+  .service-list li { flex: 0 0 auto; }
+  .service-list button,
+  .service-list button.is-active {
+    width: auto; gap: 8px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85); font-family: var(--sans); font-size: 0.85rem; color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .service-list button.is-active { background: var(--gold-2); border-color: var(--accent-ink); color: #151214; }
+  .service-list button.is-active .idx { color: #151214; }
+
+  /* 09 process: lighter scrim (only the active step's text is expanded) */
+  .process .sticky::before { height: 50%; }
+
+  /* 08 about: light veil instead of solid cards */
+  .about-copy, .stat {
+    background: rgba(255, 255, 255, 0.5); border-color: transparent; box-shadow: none;
+  }
+  .about-copy p, .about-copy .h2, .stat span { text-shadow: var(--halo); }
+  .about-copy p { color: var(--ink); }
+  .stats { gap: 10px; }
+  .stat { padding: 14px; }
+  .stat strong { text-shadow: var(--halo); }
+  .quote {
+    background: transparent; border-color: transparent; box-shadow: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none; text-shadow: var(--halo);
+  }
+
+  /* 10 contact + footer: a normal, solid white page section (no 3D behind) */
+  .contact { z-index: 3; background: var(--bg); padding-top: 72px; }
+  .contact-grid { min-height: 0; gap: 28px; }
+  .contact-info {
+    background: transparent; border-color: transparent; box-shadow: none;
+    -webkit-backdrop-filter: none; backdrop-filter: none; padding: 0;
+  }
+  .contact-form {
+    background: #ffffff; border: 1px solid var(--line);
+    box-shadow: 0 18px 50px -30px rgba(70, 30, 45, 0.3);
+  }
+  .contact-form input, .contact-form select, .contact-form textarea { background: var(--bg-2); }
+  .contact-form input:focus, .contact-form select:focus, .contact-form textarea:focus { background: #ffffff; }
+  .contact .footer { background: var(--bg); }
+
+  /* 09 process: steps as a horizontal row (like the transform bar) */
+  .process-panel .h2 { font-size: 1.6rem; }
+  .process .timeline-line { display: none; }
+  .process-bar { display: block; margin: 0.9rem 0 10px; }
+  .timeline-wrap { margin-top: 0; }
+  .timeline {
+    display: flex; gap: 18px; margin: 0 -20px; padding: 0 20px 2px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .timeline::-webkit-scrollbar { display: none; }
+  .timeline li { flex: 0 0 auto; padding: 0 0 0 16px; }
+  .timeline li::before { left: 0; top: 50%; width: 8px; height: 8px; margin-top: -4px; }
+  .timeline li.is-active::before { transform: scale(1.4); }
+  .t-head { gap: 6px; }
+  .t-head .idx { display: none; }
+  .t-head h3 { font-family: var(--sans); font-size: 0.85rem; letter-spacing: 0.04em; white-space: nowrap; }
+  .timeline li p, .timeline li.is-active p { display: none; }
+  .process-active { display: block; margin: 0.7rem 0 0; font-size: 0.9rem; color: var(--ink-2); }
+}
+.process-bar, .process-active { display: none; } /* mobile-only (above) */
+@media (max-width: 680px) {
+  .process-bar, .process-active { display: block; }
 }

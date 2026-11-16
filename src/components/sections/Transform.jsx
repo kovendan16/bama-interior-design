@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { Split } from '../Split'
 import { TRANSFORM_STEPS } from '../../lib/content'
 import { useSectionProgress } from '../../lib/scroll'
+import { range } from '../../lib/store'
 
 export function Transform() {
   const ref = useRef()
@@ -12,6 +13,14 @@ export function Transform() {
     TRANSFORM_STEPS.forEach((st, i) => p >= st.at && (s = i))
     setStep((prev) => (prev === s ? prev : s))
     if (bar.current) bar.current.style.transform = `scaleX(${Math.min(1, p / 0.92)})`
+    // mobile only (styles.css): the heading clears away soon after the section
+    // pins (~0.19), leaving the room-building animation unobstructed
+    const el = ref.current
+    if (el) {
+      const hide = range(p, 0.24, 0.32)
+      el.style.setProperty('--head-o', (1 - hide).toFixed(3))
+      el.style.setProperty('--head-y', `${(-hide * 30).toFixed(1)}px`)
+    }
   })
   return (
     <section id="transform" ref={ref} className="section transform" aria-labelledby="transform-title">

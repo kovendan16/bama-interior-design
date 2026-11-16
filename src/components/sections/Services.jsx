@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Split } from '../Split'
 import { SERVICES } from '../../lib/content'
 import { useSectionProgress, scrollToTarget } from '../../lib/scroll'
@@ -6,7 +6,19 @@ import { store } from '../../lib/store'
 
 export function Services() {
   const ref = useRef()
+  const list = useRef()
   const [active, setActive] = useState(0)
+
+  // mobile: the list is a horizontal chip row — keep the active chip in view
+  // (scrolls only the row itself, never the page)
+  useEffect(() => {
+    const ul = list.current
+    if (!ul || ul.scrollWidth <= ul.clientWidth) return
+    const btn = ul.children[active]
+    if (!btn) return
+    const left = btn.offsetLeft - (ul.clientWidth - btn.offsetWidth) / 2
+    ul.scrollTo({ left: Math.max(0, left), behavior: 'smooth' })
+  }, [active])
   useSectionProgress(ref, 'services', (p) => {
     const i = Math.min(SERVICES.length - 1, Math.floor(p * SERVICES.length))
     store.service = i
@@ -34,7 +46,7 @@ export function Services() {
           <h2 id="services-title" className="h2">
             <Split text="Every layer of a room, designed." data-split />
           </h2>
-          <ul className="service-list" role="tablist" aria-label="Service categories">
+          <ul ref={list} className="service-list" role="tablist" aria-label="Service categories">
             {SERVICES.map((sv, i) => (
               <li key={sv.title}>
                 <button role="tab" aria-selected={i === active} className={i === active ? 'is-active' : ''} onClick={() => go(i)}>

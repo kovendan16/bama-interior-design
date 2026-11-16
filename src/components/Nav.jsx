@@ -7,7 +7,7 @@ const LINKS = [
   ['Home', '#hero'],
   ['Spaces', '#living'],
   ['Transform', '#transform'],
-  ['Dollhouse', '#dollhouse'],
+  // ['Dollhouse', '#dollhouse'], // section disabled (see App.jsx)
   ['Portfolio', '#portfolio'],
   ['Services', '#services'],
   ['About', '#about'],
