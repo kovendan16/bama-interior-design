@@ -12,7 +12,7 @@ export const HERO_STAGES = [
     t: 10,
     label: 'Floors & finishes',
     title: ['Foundations That', 'Set the', 'Tone.'],
-    text: 'Herringbone parquet, lime-plaster walls and timber panelling bring warmth to the shell.',
+    text: 'Polished marble floors, soft cream walls and fluted wood panelling bring warmth to the shell.',
   },
   {
     t: 28,

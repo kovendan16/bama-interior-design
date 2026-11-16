@@ -11,8 +11,8 @@ const INFO = {
   living: {
     label: 'Living Room',
     title: 'The Luxury Lounge',
-    text: 'The finished room from our homepage transformation — real scanned furniture, herringbone parquet and lime plaster.',
-    materials: ['Herringbone oak', 'Lime plaster', 'Leather Chesterfield', 'Marble & brass'],
+    text: 'The finished room from our homepage transformation — polished marble, a cove-lit ceiling, a gold ring chandelier and glass doors to the sea.',
+    materials: ['Italian marble', 'Cove lighting', 'Leather & velvet', 'Bronze mirror & gold'],
   },
   bedroom: {
     label: 'Bedroom',

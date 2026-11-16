@@ -432,3 +432,79 @@ export function blueprintGrid() {
     return finish(c, { repeat: [3, 2.5] })
   })
 }
+
+// --- modern luxury living room -----------------------------------------
+/**
+ * Polished beige Italian-marble floor: a 2×2 block of large-format tiles (one
+ * texture = 2.4 m), soft cloudy veins whose direction changes per tile, and
+ * hairline joints. Pair with a glossy material so it mirrors the lights.
+ */
+export function luxeMarbleTiles() {
+  return memo('luxe-marble-tiles', () => {
+    const S = isSmall ? 512 : 1024
+    const [c, ctx] = makeCanvas(S, S)
+    const img = ctx.createImageData(S, S)
+    const noise = makeNoise(11)
+    const base = [233, 220, 200]
+    const warm = [214, 190, 158]
+    const vein = [176, 146, 110]
+    const half = S / 2
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const tile = (x < half ? 0 : 1) + (y < half ? 0 : 2)
+        const ang = [0.55, -0.4, 1.1, 0.15][tile]
+        const nx = x / S
+        const ny = y / S
+        const u = nx * Math.cos(ang) - ny * Math.sin(ang)
+        const v = nx * Math.sin(ang) + ny * Math.cos(ang)
+        const turb = noise(nx * 3 + tile * 7, ny * 3, 5)
+        const s = Math.abs(Math.sin((u * 2.6 + v * 0.9 + turb * 2.4) * Math.PI))
+        const veinAmt = Math.pow(1 - s, 18) * 0.5 + Math.pow(1 - s, 60) * 0.35
+        const cloud = noise(nx * 5 + 30, ny * 5, 4)
+        const i = (y * S + x) * 4
+        for (let k = 0; k < 3; k++) {
+          const b = base[k] + (warm[k] - base[k]) * cloud * 0.9
+          img.data[i + k] = b * (1 - veinAmt) + vein[k] * veinAmt
+        }
+        img.data[i + 3] = 255
+      }
+    }
+    ctx.putImageData(img, 0, 0)
+    // hairline joints between the tiles
+    ctx.fillStyle = 'rgba(150,125,95,0.55)'
+    const j = Math.max(1, S / 1024)
+    ctx.fillRect(0, 0, S, j)
+    ctx.fillRect(0, half, S, j)
+    ctx.fillRect(0, 0, j, S)
+    ctx.fillRect(half, 0, j, S)
+    return finish(c, { aniso: 16 })
+  })
+}
+
+/** Bronze-tinted mirror with a bevelled diamond grid (feature wall). */
+export function diamondMirror() {
+  return memo('diamond-mirror', () => {
+    const S = 512
+    const [c, ctx] = makeCanvas(S, S)
+    const g = ctx.createLinearGradient(0, 0, S, S)
+    g.addColorStop(0, '#a9876a')
+    g.addColorStop(0.5, '#8a6a52')
+    g.addColorStop(1, '#a07f63')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, S, S)
+    const step = S / 2
+    ctx.lineWidth = 5
+    ctx.strokeStyle = '#e8cf9c'
+    for (let k = -2; k <= 4; k++) {
+      ctx.beginPath()
+      ctx.moveTo(k * step, 0)
+      ctx.lineTo(k * step + S, S)
+      ctx.stroke()
+      ctx.beginPath()
+      ctx.moveTo(k * step + S, 0)
+      ctx.lineTo(k * step, S)
+      ctx.stroke()
+    }
+    return finish(c)
+  })
+}
