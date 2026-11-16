@@ -508,3 +508,214 @@ export function diamondMirror() {
     return finish(c)
   })
 }
+
+// --- bedroom: hand-painted chinoiserie mural ---------------------------
+/**
+ * Flowering branches, leaves, birds and butterflies on aged cream plaster,
+ * rising from a band of dark shrubs — painted mural wallpaper. 2.5 : 1.
+ */
+export function chinoiserieMural() {
+  return memo('chinoiserie', () => {
+    const W = isSmall ? 1280 : 2560
+    const H = W / 2.5
+    const [c, ctx] = makeCanvas(W, H)
+    const r = rng(77)
+    const k = W / 2560 // scale everything with the canvas
+    // aged cream plaster with soft mottling, paler towards the top
+    const bg = ctx.createLinearGradient(0, 0, 0, H)
+    bg.addColorStop(0, '#f2e8d4')
+    bg.addColorStop(1, '#e8d7b6')
+    ctx.fillStyle = bg
+    ctx.fillRect(0, 0, W, H)
+    for (let i = 0; i < 70; i++) {
+      const x = r() * W
+      const y = r() * H
+      const rad = (80 + r() * 260) * k
+      const g = ctx.createRadialGradient(x, y, 0, x, y, rad)
+      g.addColorStop(0, `rgba(${r() > 0.5 ? '205,180,140' : '250,244,230'},${0.08 + r() * 0.1})`)
+      g.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = g
+      ctx.fillRect(x - rad, y - rad, rad * 2, rad * 2)
+    }
+    const leafCols = ['#2f4636', '#3d5a44', '#557055', '#7f9473', '#253a2e']
+    const flowerCols = ['#b8442a', '#c9552f', '#d4753e', '#d98a7a', '#a8382a', '#e2a35c']
+    const leaf = (x, y, a, s) => {
+      ctx.save()
+      ctx.translate(x, y)
+      ctx.rotate(a)
+      ctx.fillStyle = leafCols[Math.floor(r() * leafCols.length)]
+      ctx.beginPath()
+      ctx.ellipse(s * 0.5, 0, s * 0.5, s * 0.2, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.strokeStyle = 'rgba(20,30,20,0.35)'
+      ctx.lineWidth = 1 * k
+      ctx.beginPath()
+      ctx.moveTo(0, 0)
+      ctx.lineTo(s, 0)
+      ctx.stroke()
+      ctx.restore()
+    }
+    const flower = (x, y, s) => {
+      const blue = r() < 0.08
+      const col = blue ? '#355e7a' : flowerCols[Math.floor(r() * flowerCols.length)]
+      const petals = 5 + Math.floor(r() * 4)
+      ctx.fillStyle = col
+      for (let i = 0; i < petals; i++) {
+        const a = (i / petals) * Math.PI * 2 + r()
+        ctx.beginPath()
+        ctx.ellipse(x + Math.cos(a) * s * 0.45, y + Math.sin(a) * s * 0.45, s * 0.42, s * 0.3, a, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.fillStyle = 'rgba(90,25,15,0.55)'
+      ctx.beginPath()
+      ctx.arc(x, y, s * 0.28, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = 'rgba(255,220,180,0.35)'
+      ctx.beginPath()
+      ctx.arc(x - s * 0.15, y - s * 0.15, s * 0.16, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    const bird = (x, y, s, dir) => {
+      ctx.save()
+      ctx.translate(x, y)
+      ctx.scale(dir, 1)
+      ctx.strokeStyle = '#2f5a72'
+      ctx.lineWidth = 3 * k
+      ctx.beginPath()
+      ctx.moveTo(-s * 0.4, s * 0.1)
+      ctx.quadraticCurveTo(-s * 1.4, s * 0.6, -s * 2.2, s * 1.6)
+      ctx.stroke()
+      ctx.fillStyle = '#3e6f8a'
+      ctx.beginPath()
+      ctx.ellipse(0, 0, s * 0.55, s * 0.26, -0.4, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#c9552f'
+      ctx.beginPath()
+      ctx.ellipse(s * 0.1, s * 0.1, s * 0.25, s * 0.12, -0.4, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.fillStyle = '#2b4f63'
+      ctx.beginPath()
+      ctx.arc(s * 0.5, -s * 0.22, s * 0.16, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
+    const branch = (x, y, a, len, w, depth) => {
+      const x2 = x + Math.cos(a) * len
+      const y2 = y + Math.sin(a) * len
+      const bend = (r() - 0.5) * len * 0.5
+      ctx.strokeStyle = depth > 3 ? '#6b4a32' : '#5a3d28'
+      ctx.lineWidth = Math.max(1.2 * k, w)
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      ctx.moveTo(x, y)
+      ctx.quadraticCurveTo((x + x2) / 2 + bend, (y + y2) / 2, x2, y2)
+      ctx.stroke()
+      // leaves along the branch
+      const n = depth < 3 ? 2 : 4
+      for (let i = 0; i < n; i++) {
+        const t = 0.3 + r() * 0.7
+        leaf(x + (x2 - x) * t, y + (y2 - y) * t, a + (r() > 0.5 ? 1 : -1) * (0.6 + r() * 0.8), (22 + r() * 22) * k)
+      }
+      if (depth <= 0 || len < 18 * k) {
+        if (r() < 0.75) flower(x2, y2, (10 + r() * 14) * k)
+        return
+      }
+      const kids = 2 + (r() < 0.35 ? 1 : 0)
+      for (let i = 0; i < kids; i++) {
+        branch(x2, y2, a + (r() - 0.5) * 1.3, len * (0.62 + r() * 0.2), w * 0.66, depth - 1)
+      }
+    }
+    // shrubs and grasses along the bottom
+    for (let i = 0; i < 220; i++) {
+      const x = r() * W
+      const y = H - r() * H * 0.12
+      leaf(x, y, -Math.PI / 2 + (r() - 0.5) * 1.6, (30 + r() * 50) * k)
+    }
+    ctx.fillStyle = '#2a3326'
+    ctx.fillRect(0, H - 14 * k, W, 14 * k)
+    // flowering trees
+    const trees = 9
+    for (let t = 0; t < trees; t++) {
+      const x = ((t + 0.3 + r() * 0.4) / trees) * W
+      branch(x, H - 10 * k, -Math.PI / 2 + (r() - 0.5) * 0.35, (140 + r() * 70) * k, (12 + r() * 6) * k, 6)
+    }
+    // birds and butterflies
+    for (let i = 0; i < 7; i++) bird(r() * W, H * (0.25 + r() * 0.45), (16 + r() * 8) * k, r() > 0.5 ? 1 : -1)
+    for (let i = 0; i < 6; i++) {
+      const x = r() * W
+      const y = H * (0.15 + r() * 0.5)
+      ctx.fillStyle = r() > 0.5 ? '#d4753e' : '#355e7a'
+      ;[-1, 1].forEach((s) => {
+        ctx.beginPath()
+        ctx.ellipse(x + s * 6 * k, y, 7 * k, 4.5 * k, s * 0.5, 0, Math.PI * 2)
+        ctx.fill()
+      })
+    }
+    // gentle age wash over the paint
+    ctx.fillStyle = 'rgba(232,214,180,0.12)'
+    ctx.fillRect(0, 0, W, H)
+    return finish(c, { aniso: 8 })
+  })
+}
+
+/** Woven peach / terracotta stripes for bedding (stripes run along v). */
+export function stripeFabric() {
+  return memo('stripe-fabric', () => {
+    const S = 256
+    const [c, ctx] = makeCanvas(S, S)
+    const r = rng(5)
+    const cols = ['#e9a37e', '#c86844', '#f0b892', '#c25e3c']
+    const band = S / 8
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = cols[i % cols.length]
+      ctx.fillRect(i * band, 0, band, S)
+    }
+    for (let y = 0; y < S; y += 2) {
+      ctx.fillStyle = `rgba(255,255,255,${0.03 + r() * 0.05})`
+      ctx.fillRect(0, y, S, 1)
+    }
+    for (let x = 0; x < S; x += 3) {
+      ctx.fillStyle = `rgba(80,30,10,${0.03 + r() * 0.05})`
+      ctx.fillRect(x, 0, 1, S)
+    }
+    return finish(c, { repeat: [2, 2] })
+  })
+}
+
+/** Office carpet tiles: mottled grey, 50 cm modules (texture = 2 m). */
+export function carpetTiles() {
+  return memo('carpet-tiles', () => {
+    const S = isSmall ? 512 : 1024
+    const [c, ctx] = makeCanvas(S, S)
+    const img = ctx.createImageData(S, S)
+    const noise = makeNoise(31)
+    const r = rng(9)
+    for (let y = 0; y < S; y++) {
+      for (let x = 0; x < S; x++) {
+        const n = noise((x / S) * 18, (y / S) * 18, 4)
+        const speck = r() * 0.5
+        const v = 120 + n * 70 + speck * 40 - 30
+        const i = (y * S + x) * 4
+        img.data[i] = v
+        img.data[i + 1] = v + 2
+        img.data[i + 2] = v + 6
+        img.data[i + 3] = 255
+      }
+    }
+    ctx.putImageData(img, 0, 0)
+    // quarter-turned modules read slightly lighter / darker
+    const m = S / 4
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 4; j++) {
+        ctx.fillStyle = (i + j) % 2 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+        ctx.fillRect(i * m, j * m, m, m)
+      }
+    }
+    ctx.fillStyle = 'rgba(40,42,46,0.35)'
+    for (let i = 0; i <= 4; i++) {
+      ctx.fillRect(i * m, 0, 1, S)
+      ctx.fillRect(0, i * m, S, 1)
+    }
+    return finish(c, { aniso: 8 })
+  })
+}

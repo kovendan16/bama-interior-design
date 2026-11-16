@@ -1,7 +1,10 @@
 import { useRef } from 'react'
+import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { Shell } from './Shell'
-import { B, Cyl } from '../furniture/primitives'
+import { B, Cyl, Plane } from '../furniture/primitives'
+import { BubbleBed, WalnutNightstand, BeadedLamp, PelmetCurtains, TaskChair, BenchDesk, PlanterDivider, LightGrid, SnakePlanter, WoodBlind } from '../furniture/modern-rooms'
+import { chinoiserieMural, stripeFabric, carpetTiles } from '../textures'
 import {
   Sofa,
   Armchair,
@@ -42,7 +45,7 @@ import {
   OfficeChair,
   Fireplace,
 } from '../furniture/rooms-furniture'
-import { useMat } from '../materials'
+import { useMat, getMat } from '../materials'
 
 /* =============================== LIVING =============================== */
 export function LivingRoom({ shell = {}, curtainsAnimated = true }) {
@@ -74,30 +77,83 @@ export function LivingRoom({ shell = {}, curtainsAnimated = true }) {
   )
 }
 
-/* =============================== BEDROOM =============================== */
-export function Bedroom({ shell = {}, curtainsAnimated = true }) {
+/* =============================== BEDROOM ===============================
+ * Painted-mural bedroom: a hand-painted floral mural wrapping two walls, a sage
+ * bouclé bubble bed with striped bedding, walnut nightstands with glass-bead
+ * lamps, a deep blue shag carpet and floor-to-ceiling linen under a pelmet. */
+const texLoader = new THREE.TextureLoader()
+const loadTex = (url, repeat, color = false) => {
+  const t = texLoader.load(url)
+  t.wrapS = t.wrapT = THREE.RepeatWrapping
+  t.repeat.set(repeat[0], repeat[1])
+  t.anisotropy = 8
+  if (color) t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+const photoSky = (url) => {
+  const t = texLoader.load(url)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = 8
+  return new THREE.MeshBasicMaterial({ map: t, toneMapped: false })
+}
+
+let bedroomMats
+function getBedroomMats() {
+  if (bedroomMats) return bedroomMats
+  const mural = chinoiserieMural()
+  const muralSide = mural.clone()
+  muralSide.wrapS = THREE.MirroredRepeatWrapping
+  muralSide.repeat.set(10 / 7.6, 1)
+  muralSide.needsUpdate = true
+  const weave = '/textures/fabric_pattern_07/nor.jpg'
+  const linenN = '/textures/rough_linen/nor.jpg'
+  bedroomMats = {
+    wall: new THREE.MeshStandardMaterial({ color: '#eadcc0', roughness: 0.95 }),
+    carpet: new THREE.MeshStandardMaterial({ color: '#1b4f86', roughness: 1, normalMap: loadTex(weave, [22, 18]), normalScale: new THREE.Vector2(3, 3) }),
+    mural: new THREE.MeshStandardMaterial({ map: mural, roughness: 0.9 }),
+    muralSide: new THREE.MeshStandardMaterial({ map: muralSide, roughness: 0.9 }),
+    boucle: new THREE.MeshStandardMaterial({ color: '#7b855e', roughness: 1, normalMap: loadTex(weave, [3, 3]), normalScale: new THREE.Vector2(1.4, 1.4) }),
+    bedding: new THREE.MeshStandardMaterial({ map: stripeFabric(), roughness: 0.9 }),
+    walnut: getMat('walnut'),
+    brass: getMat('brass'),
+    glass: new THREE.MeshPhysicalMaterial({ color: '#1d4f80', roughness: 0.08, metalness: 0.1, clearcoat: 1, transparent: true, opacity: 0.9 }),
+    shade: new THREE.MeshStandardMaterial({ color: '#596a4f', roughness: 0.9, side: THREE.DoubleSide }),
+    bulb: getMat('lampWarm'),
+    linen: new THREE.MeshPhysicalMaterial({ color: '#d9c7a6', roughness: 0.95, sheen: 1, sheenColor: new THREE.Color('#fff4de'), sheenRoughness: 0.5, normalMap: loadTex(linenN, [2, 4]), side: THREE.DoubleSide }),
+    pelmet: new THREE.MeshStandardMaterial({ color: '#d4c2a1', roughness: 0.95, normalMap: loadTex(linenN, [3, 1]) }),
+    sky: photoSky('/textures/photos/sea-view.jpg'),
+  }
+  return bedroomMats
+}
+
+export function Bedroom({ shell = {} }) {
+  const m = getBedroomMats()
   return (
     <group>
-      <Shell floor="floorWalnut" wall="wallClay" sideWall="wallStone" windows={[{ x: 3.3, w: 2.8, sill: 0.4, top: 3.4 }]} sky="skyGolden" {...shell} />
-      <CoveLight />
-      <Rug w={3.4} d={3.0} position={[-1.6, 0, -2.6]} m="rugSage" />
-      <Bed position={[-1.6, 0, -3.65]} />
-      <Nightstand position={[-3.2, 0, -4.45]} />
-      <Nightstand position={[0, 0, -4.45]} />
-      <PendantGlobe position={[-3.25, 0, -4.4]} drop={2.05} radius={0.12} />
-      <PendantGlobe position={[0.05, 0, -4.4]} drop={2.05} radius={0.12} />
-      <WallArt w={1.7} h={0.9} art="art3" position={[-1.6, 2.55, -4.86]} />
-      <Bench position={[-1.6, 0, -1.95]} />
-      <Wardrobe w={3.0} position={[-5.6, 0, -2.6]} rotation={[0, Math.PI / 2, 0]} />
-      <Armchair position={[3.4, 0, -2.6]} rotation={[0, -0.5, 0]} m="fabricSand" leg="brass" />
-      <SideTable position={[2.4, 0, -3.4]} top="marbleWhite" />
-      <Curtain w={0.9} h={3.3} position={[1.55, 3.55, -4.72]} m="curtainDark" animated={curtainsAnimated} />
-      <Curtain w={0.9} h={3.3} position={[5.05, 3.55, -4.72]} m="curtainDark" animated={curtainsAnimated} />
+      <Shell floor={m.carpet} wall={m.wall} windows={[{ x: 3.75, w: 3.0, sill: 0.05, top: 3.3 }]} sky={m.sky} skirting="walnut" {...shell} />
+      {/* hand-painted mural on the bed wall and the left wall */}
+      <Plane s={[7.6, 3.04]} p={[-2.2, 1.52, -4.885]} m={m.mural} />
+      <Plane s={[10, 3.04]} p={[-5.885, 1.52, 0]} r={[0, Math.PI / 2, 0]} m={m.muralSide} />
+      <group position={[-2.2, 0, -3.62]}>
+        <BubbleBed w={2.5} l={2.55} frame={m.boucle} bedding={m.bedding} bolster={m.bedding} />
+      </group>
+      {[-3.85, -0.55].map((x) => (
+        <group key={x} position={[x, 0, -4.6]}>
+          <WalnutNightstand m={m.walnut} knob={m.brass} />
+          <group position={[0.05, 0.6, -0.02]}>
+            <BeadedLamp glass={m.glass} shade={m.shade} bulb={m.bulb} />
+          </group>
+        </group>
+      ))}
+      <group position={[0, 0, -4.92]}>
+        <PelmetCurtains x0={1.7} x1={5.95} h={3.75} m={m.linen} pelmet={m.pelmet} Curtain={Curtain} />
+      </group>
+      <Armchair position={[3.3, 0, -2.2]} rotation={[0, -0.55, 0]} m="velvetRust" leg="walnut" />
+      <SideTable position={[2.25, 0, -2.9]} top="walnut" base="brass" />
       <Dresser position={[5.62, 0, -0.6]} rotation={[0, -Math.PI / 2, 0]} />
       <RoundMirror position={[5.88, 1.75, -0.6]} rotation={[0, -Math.PI / 2, 0]} />
-      <Vase position={[5.6, 0.9, -1.1]} kind="round" m="ceramicWhite" />
-      <Plant position={[5.2, 0, -4.3]} height={1.6} leaves={34} seed={12} />
-      <Plant position={[-5.1, 0, 0.5]} height={1.2} pot="ceramicSand" leaves={26} seed={14} kind="palm" />
+      <Vase position={[5.6, 0.9, -1.1]} kind="round" m="ceramicSand" />
+      <Plant position={[5.2, 0, 1.5]} height={1.6} pot="ceramicSand" leaves={30} seed={14} kind="palm" />
     </group>
   )
 }
@@ -166,26 +222,89 @@ export function Bathroom({ shell = {} }) {
   )
 }
 
-/* =============================== OFFICE =============================== */
+/* =============================== OFFICE ===============================
+ * Open-plan studio: walnut benching desks with glass screens and mesh task
+ * chairs, walnut planter partitions under black steel grids, linear LED bars,
+ * snake plants along a ribbon window over the city, grey carpet tiles and a
+ * polished-concrete walkway beside a walnut-clad wall. */
+let officeMats
+function getOfficeMats() {
+  if (officeMats) return officeMats
+  const tiles = carpetTiles()
+  tiles.repeat.set(12 / 2, 10 / 2)
+  officeMats = {
+    carpet: new THREE.MeshStandardMaterial({ map: tiles, color: '#b4b6ba', roughness: 1 }),
+    walkway: new THREE.MeshStandardMaterial({ color: '#c3c2bd', roughness: 0.32 }),
+    wall: getMat('concrete'),
+    walnut: getMat('walnut'),
+    black: getMat('blackMetal'),
+    screen: new THREE.MeshPhysicalMaterial({ color: '#d4dadd', roughness: 0.35, transparent: true, opacity: 0.45 }),
+    pedestal: new THREE.MeshStandardMaterial({ color: '#232426', roughness: 0.5 }),
+    mesh: new THREE.MeshStandardMaterial({ color: '#1c1d20', roughness: 0.8 }),
+    led: new THREE.MeshBasicMaterial({ color: '#f4f7ff', toneMapped: false }),
+    soil: new THREE.MeshStandardMaterial({ color: '#2b2420', roughness: 1 }),
+    leafDark: new THREE.MeshStandardMaterial({ color: '#2f5a35', roughness: 0.6 }),
+    leafEdge: new THREE.MeshStandardMaterial({ color: '#6f8f3a', roughness: 0.6 }),
+    sky: photoSky('/textures/photos/city-view.jpg'),
+  }
+  return officeMats
+}
+
 export function Office({ shell = {} }) {
+  const m = getOfficeMats()
+  const chairs = [-1.4, 0, 1.4]
   return (
     <group>
-      <Shell floor="floorWalnut" wall="wallNavy" sideWall="wallTaupe" windows={[{ x: 3.4, w: 3.0, sill: 0.6, top: 3.3 }]} sky="skyDay" {...shell} />
-      <CoveLight />
-      <Shelving w={1.9} h={2.9} position={[-4.4, 0, -4.78]} seed={41} m="walnut" />
-      <Shelving w={1.9} h={2.9} position={[-2.35, 0, -4.78]} seed={42} m="walnut" />
-      <Desk position={[0.4, 0, -2.4]} rotation={[0, Math.PI, 0]} />
-      <OfficeChair position={[0.4, 0, -3.25]} />
-      <PendantDome position={[0.4, 0, -2.4]} drop={1.4} />
-      <Rug w={3.2} d={2.4} position={[0.4, 0, -2.5]} m="rugCharcoal" />
-      <LoungeChair position={[-3.8, 0, -1.4]} rotation={[0, 0.6, 0]} />
-      <SideTable position={[-4.6, 0, -0.7]} />
-      <FloorLamp position={[-5.2, 0, -1.8]} />
-      <WallArt w={1.4} h={1.0} art="art3" position={[-5.87, 1.8, 0.2]} rotation={[0, Math.PI / 2, 0]} frame="brass" />
-      <Plant position={[5.2, 0, -4.2]} height={1.8} leaves={40} seed={45} />
-      <Plant position={[1.8, 0, -4.4]} height={1.0} leaves={20} seed={46} pot="ceramicBlack" />
-      <Curtain w={0.8} h={3.2} position={[1.7, 3.45, -4.72]} m="curtainDark" animated={false} />
-      <Curtain w={0.8} h={3.2} position={[5.1, 3.45, -4.72]} m="curtainDark" animated={false} />
+      <Shell floor={m.carpet} wall={m.wall} windows={[{ x: 0.8, w: 9.6, sill: 0.55, top: 3.3 }]} sky={m.sky} skirting={false} {...shell} />
+      {/* polished-concrete walkway beside a walnut-clad wall */}
+      <B s={[1.9, 0.01, 10]} p={[-5.05, 0.006, 0]} m={m.walkway} shadow={false} />
+      <B s={[0.04, 3.9, 10]} p={[-5.97, 1.95, 0]} m={m.walnut} />
+      {Array.from({ length: 16 }, (_, i) => (
+        <B key={i} s={[0.012, 3.9, 0.012]} p={[-5.945, 1.95, -4.7 + i * 0.63]} m={m.black} shadow={false} />
+      ))}
+      {/* wood blinds, half lowered */}
+      <group position={[0.8, 0, -4.82]}>
+        <WoodBlind w={9.5} top={3.28} drop={0.85} m={m.walnut} />
+      </group>
+      {/* planter partitions along the walkway */}
+      {[-3.6, -1.4, 0.8].map((z, i) => (
+        <group key={z} position={[-3.75, 0, z]}>
+          <PlanterDivider len={2.0} wood={m.walnut} frame={m.black} soil={m.soil} Plant={Plant} seed={i + 2} />
+        </group>
+      ))}
+      {/* two benching clusters */}
+      {[-2.3, 0.75].map((z) => (
+        <group key={z} position={[1.0, 0, z]}>
+          <BenchDesk len={4.2} depth={1.5} top={m.walnut} frame={m.black} screen={m.screen} pedestal={m.pedestal} />
+          {chairs.map((x) => (
+            <group key={x}>
+              <group position={[x, 0, -1.1]}>
+                <TaskChair mesh={m.mesh} frame={m.black} />
+              </group>
+              <group position={[x, 0, 1.1]} rotation={[0, Math.PI, 0]}>
+                <TaskChair mesh={m.mesh} frame={m.black} />
+              </group>
+            </group>
+          ))}
+        </group>
+      ))}
+      <group position={[1.0, 0, -0.78]}>
+        <LightGrid w={5.4} d={4.6} frame={m.black} led={m.led} />
+      </group>
+      {/* snake plants along the windows */}
+      {[-1.15, 3.0].map((x, i) => (
+        <group key={x} position={[x, 0, -4.6]}>
+          <SnakePlanter len={3.8} wood={m.walnut} leafDark={m.leafDark} leafEdge={m.leafEdge} seed={i + 4} />
+        </group>
+      ))}
+      {/* walnut storage wall on the right */}
+      <B s={[0.55, 1.9, 3.4]} p={[5.7, 0.95, -0.4]} m={m.walnut} />
+      {[-1.5, -0.65, 0.2, 1.05].map((z) => (
+        <B key={z} s={[0.012, 1.86, 0.012]} p={[5.42, 0.95, z - 0.4]} m={m.black} shadow={false} />
+      ))}
+      <group position={[5.55, 0, 2.6]} rotation={[0, Math.PI / 2, 0]}>
+        <SnakePlanter len={1.6} wood={m.walnut} leafDark={m.leafDark} leafEdge={m.leafEdge} seed={9} />
+      </group>
     </group>
   )
 }

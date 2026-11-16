@@ -16,9 +16,9 @@ const INFO = {
   },
   bedroom: {
     label: 'Bedroom',
-    title: 'Suite Terracotta',
-    text: 'Clay-toned walls, a channel-tufted headboard and walnut joinery for calm mornings.',
-    materials: ['Clay plaster', 'Smoked walnut', 'Linen', 'Velvet'],
+    title: 'Suite Botanica',
+    text: 'A hand-painted floral mural, a sage bouclé bubble bed and a deep blue shag carpet under floor-to-ceiling linen.',
+    materials: ['Painted mural', 'Bouclé', 'Linen', 'Walnut & glass'],
   },
   kitchen: {
     label: 'Modular Kitchen',
@@ -34,9 +34,9 @@ const INFO = {
   },
   office: {
     label: 'Office',
-    title: 'Navy Study',
-    text: 'Deep navy walls, full-height walnut shelving and a reading corner for focused work.',
-    materials: ['Navy plaster', 'Walnut', 'Leather', 'Blackened steel'],
+    title: 'Studio Workspace',
+    text: 'Open-plan walnut benching, planter partitions under black steel grids, linear lighting and a skyline view.',
+    materials: ['Walnut', 'Black steel', 'Carpet tile', 'Living greenery'],
   },
 }
 const ROOMS = SC_ROOMS.map((id) => ({ id, ...INFO[id] }))
