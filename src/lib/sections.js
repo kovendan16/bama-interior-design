@@ -40,6 +40,18 @@ export const HERO_STAGES = [
   },
 ]
 
+// "Meet the Director" block in the About section (photos in public/images/team/).
+export const DIRECTOR = {
+  name: 'T. Dhavinash',
+  role: 'Director, Bama Interior Design',
+  quote: 'Every home we design begins with listening — to how you live, what you love, and how you want to feel the moment you walk through the door.',
+  text: 'At Bama, every project is personally guided from the first sketch to the final styling — so the space we hand over feels unmistakably yours.',
+  photos: [
+    { src: '/images/team/director-standing.jpg', alt: 'T. Dhavinash, Director of Bama Interior Design, standing and smiling' },
+    { src: '/images/team/director-seated.jpg', alt: 'T. Dhavinash, Director of Bama Interior Design, seated' },
+  ],
+}
+
 export const ABOUT = {
   heading: 'Designing Spaces That Feel Like Home.',
   text: 'At Bama Interior Design, we believe every space deserves thoughtful design. We combine creativity, functionality and attention to detail to create beautiful interiors that reflect your lifestyle and personality.',

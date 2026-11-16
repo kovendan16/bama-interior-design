@@ -8,10 +8,24 @@ import { ScrollTrigger } from '../../lib/scroll'
  * and cross-fades to the step currently in view; on phones each step shows its
  * own image.
  */
+// Photos fade in only once decoded, and a failed one simply hides — the frame
+// never shows the browser's broken-image icon.
+const onImgLoad = (e) => e.currentTarget.classList.add('is-loaded')
+const onImgError = (e) => (e.currentTarget.style.display = 'none')
+const markIfReady = (el) => el && el.complete && el.naturalWidth > 0 && el.classList.add('is-loaded')
+
 export function Process() {
+  const root = useRef()
   const list = useRef()
   const line = useRef()
   const [active, setActive] = useState(0)
+  const [near, setNear] = useState(false)
+
+  // start loading every step photo well before the section arrives
+  useLayoutEffect(() => {
+    const st = ScrollTrigger.create({ trigger: root.current, start: 'top 250%', once: true, onEnter: () => setNear(true) })
+    return () => st.kill()
+  }, [])
 
   useLayoutEffect(() => {
     const items = list.current.querySelectorAll('[data-step]')
@@ -36,7 +50,7 @@ export function Process() {
   }, [])
 
   return (
-    <section id="process" className="ui-section is-warm" aria-labelledby="process-title">
+    <section id="process" ref={root} className="ui-section is-warm" aria-labelledby="process-title">
       <div className="ui-wrap">
         <SectionHeading
           id="process-title"
@@ -47,17 +61,17 @@ export function Process() {
         />
         <div className="mt-14 grid gap-12 lg:grid-cols-[1fr_1fr]">
           <div className="relative hidden lg:block">
-            <div className="sticky top-28 aspect-[4/5] overflow-hidden rounded-[2rem] shadow-soft">
-              {PROCESS_STEPS.map((s, i) => (
-                <img
-                  key={s.title}
-                  src={s.img}
-                  alt=""
-                  loading="lazy"
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700"
-                  style={{ opacity: i === active ? 1 : 0, transform: i === active ? 'scale(1)' : 'scale(1.06)' }}
-                />
-              ))}
+            <div className="sticky top-28 aspect-[4/5] overflow-hidden rounded-[2rem] bg-blush-50 shadow-soft">
+              {near &&
+                PROCESS_STEPS.map((s, i) => (
+                  <div
+                    key={s.title}
+                    className="absolute inset-0 transition duration-700"
+                    style={{ opacity: i === active ? 1 : 0, transform: i === active ? 'scale(1)' : 'scale(1.06)' }}
+                  >
+                    <img src={s.img} alt="" decoding="async" ref={markIfReady} onLoad={onImgLoad} onError={onImgError} className="process-img h-full w-full object-cover" />
+                  </div>
+                ))}
               <span className="absolute bottom-5 left-5 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-ink backdrop-blur">
                 Step {String(active + 1).padStart(2, '0')} — {PROCESS_STEPS[active].title}
               </span>
@@ -78,7 +92,9 @@ export function Process() {
                 </span>
                 <h3 className={`text-2xl font-semibold tracking-[-0.03em] transition ${i === active ? 'text-ink' : 'text-ink-2'}`}>{s.title}</h3>
                 <p className="mt-2 max-w-md leading-relaxed text-ink-2">{s.text}</p>
-                <img src={s.img} alt="" loading="lazy" className="mt-5 aspect-[16/10] w-full rounded-3xl object-cover lg:hidden" />
+                <div className="mt-5 aspect-[16/10] w-full overflow-hidden rounded-3xl bg-blush-50 lg:hidden">
+                  <img src={s.img} alt="" loading="lazy" decoding="async" ref={markIfReady} onLoad={onImgLoad} onError={onImgError} className="process-img h-full w-full object-cover" />
+                </div>
               </li>
             ))}
           </ol>
